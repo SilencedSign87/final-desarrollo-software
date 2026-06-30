@@ -1,0 +1,28 @@
+# === Python / Flask ===
+backend/venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# === Base de datos local ===
+*.db
+*.sqlite
+*.sqlite3
+
+# === Entorno y credenciales ===
+.env
+*.env.local
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === OS ===
+Thumbs.db
+.DS_Store
