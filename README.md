@@ -10,7 +10,6 @@
 
 ## Backend - Flask
 
-
 ## Frontend - React
 
 # Ejecutar proyecto
@@ -20,13 +19,30 @@
 Para ejecutar el backend es necesario python 3.11 o superior. en la carpeta `/backend`
 es necesario instalar dependencias
 ```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
 
+Activar entorno y ejecutar el proyecto
+
+```bash
+.venv\Scripts\activate
+python run.py
+```
+
+## Frontend
+
+Instalar dependencias
+
+```bash
+npm install
 
 ```
 
-```bash
+Ejecutar el proyecto
 
-venv\Scripts\activate
-python run.py
-
+```
+npm run dev
 ```
