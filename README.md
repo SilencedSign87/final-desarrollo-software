@@ -10,6 +10,7 @@
 
 ## Backend - Flask
 
+
 ## Frontend - React
 
 # Ejecutar proyecto
@@ -21,14 +22,23 @@ es necesario instalar dependencias
 ```bash
 cd backend
 python -m venv .venv
+# Activar entorno
 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+Ejecutar migraciones
+
+```bash
+# con el entorno activado
+flask db upgrade
+```
+
+
 Activar entorno y ejecutar el proyecto
 
 ```bash
-.venv\Scripts\activate
+# con el entorno activado
 python run.py
 ```
 
@@ -38,11 +48,10 @@ Instalar dependencias
 
 ```bash
 npm install
-
 ```
 
 Ejecutar el proyecto
 
-```
+```bash
 npm run dev
 ```

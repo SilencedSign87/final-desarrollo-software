@@ -1,4 +1,4 @@
-# === Python / Flask ===
+# backend
 backend/venv/
 .venv/
 venv/
@@ -9,22 +9,24 @@ __pycache__/
 dist/
 build/
 *.egg
+backend/instance/
+backend/.flaskenv 
 
-# === Base de datos local ===
+# bases de datos
 *.db
 *.sqlite
 *.sqlite3
 
-# === Entorno y credenciales ===
+# entorno
 .env
 *.env.local
 
-# === IDE ===
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# === OS ===
+# OS
 Thumbs.db
 .DS_Store
