@@ -11,15 +11,18 @@ def create_app():
     migrate.init_app(app, db)
     CORS(app)
 
-    # Registro de rutas
+    # Registro de modelos
     from .models import (
         User, Facultad, Especialidad, PlanEstudio, Curso,
         Estudiante, Docente, PeriodoAcademico, Seccion, Horario,
         Matricula, DetalleMatricula, TipoEvaluacion, Evaluacion,
         SolicitudDocumento
     )
+
+    # Registro de rutas
     from .routes.api import api_bp
-    
     app.register_blueprint(api_bp, url_prefix='/api')
+    from .routes.auth import auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
     return app

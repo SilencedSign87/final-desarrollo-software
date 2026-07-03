@@ -21,9 +21,9 @@ Para ejecutar el backend es necesario python 3.11 o superior. en la carpeta `/ba
 es necesario instalar dependencias
 ```bash
 cd backend
-python -m venv .venv
+python -m venv venv
 # Activar entorno
-.venv\Scripts\activate
+venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
