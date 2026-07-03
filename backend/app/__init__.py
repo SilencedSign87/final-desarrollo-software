@@ -12,7 +12,14 @@ def create_app():
     CORS(app)
 
     # Registro de rutas
+    from .models import (
+        User, Facultad, Especialidad, PlanEstudio, Curso,
+        Estudiante, Docente, PeriodoAcademico, Seccion, Horario,
+        Matricula, DetalleMatricula, TipoEvaluacion, Evaluacion,
+        SolicitudDocumento
+    )
     from .routes.api import api_bp
+    
     app.register_blueprint(api_bp, url_prefix='/api')
 
     return app
