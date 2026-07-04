@@ -1,7 +1,8 @@
-from flask import Blueprint, jsonify
+from flask_openapi3 import APIBlueprint
 
-api_bp = Blueprint('api', __name__)
+api_bp = APIBlueprint('api', __name__)
 
-@api_bp.route('/health')
+@api_bp.get('/health')
 def health():
-    return jsonify({'status':'ok'})
+    """Health check de la API"""
+    return {'status': 'ok'}
