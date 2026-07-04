@@ -42,6 +42,10 @@ Activar entorno y ejecutar el proyecto
 python run.py
 ```
 
+### Documentación de la API
+
+Una vez el servidor este corriendo, la documentación se encuentra en [/docs/scalar](http://127.0.0.1:5000/docs/scalar)
+
 ## Frontend
 
 Instalar dependencias
