@@ -2,15 +2,14 @@ import { useEffect, useState } from 'react'
 import { healthCheck } from './services/api'
 
 function App() {
-  const [health, setHealth] = useState<string | null>(null)
+  const [health, setHealth] = useState(null)
 
   useEffect(() => {
     async function fetchHealth() {
       try {
-
         const data = await healthCheck()
         setHealth(data.data.status)
-      }catch (error) {
+      } catch (error) {
         setHealth('Error fetching health status')
       }
     }
