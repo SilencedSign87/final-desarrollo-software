@@ -49,4 +49,12 @@ def create_app():
 
     app.register_api(auth_bp, url_prefix="/api/auth")
 
+    from .routes.documents import documents_bp
+
+    app.register_api(documents_bp, url_prefix="/api/documentos")
+
+    from .routes.security import security_bp
+
+    app.register_api(security_bp, url_prefix="/api/seguridad")
+
     return app

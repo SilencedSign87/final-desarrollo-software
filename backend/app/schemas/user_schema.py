@@ -6,7 +6,7 @@ class UserCreate(BaseModel):
     apellidos: str = Field(..., min_length=1, max_length=100, description="Apellidos del usuario")
     email: EmailStr
     password: str = Field(..., min_length=6, description="Contraseña (mín. 6 caracteres)")
-    rol: str = Field(..., pattern="^(estudiante|docente|administrador)$", description="Rol del usuario")
+    rol: str = Field(..., pattern="^(estudiante|docente|administrador|direccion)$", description="Rol del usuario")
     dni: str = Field(..., min_length=8, max_length=20, description="DNI del usuario")
 
 class UserLogin(BaseModel):
