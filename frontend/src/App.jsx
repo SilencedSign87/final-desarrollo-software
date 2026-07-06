@@ -1,29 +1,49 @@
-import { useEffect, useState } from 'react'
-import { healthCheck } from './services/api'
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+import LoginView from "./views/Loginview"
+import { AuthProvider } from "./context/AuthContext"
+import DashboardRedirect from "./components/DashboardRedirect"
+import ProtectedRoute from "./components/ProtectedRoute"
+import EstudianteDashboard from "./views/Estudiante/Dashboard"
+import DocenteDashboard from "./views/Docente/Dashboard"
+import AdministrativoDashboard from "./views/Administrativo/Dashboard"
 
 function App() {
-  const [health, setHealth] = useState(null)
-
-  useEffect(() => {
-    async function fetchHealth() {
-      try {
-        const data = await healthCheck()
-        setHealth(data.data.status)
-      } catch (error) {
-        setHealth('Error fetching health status')
-      }
-    }
-    setHealth('Loading...')
-
-    fetchHealth()
-  }, [])
-
   return (
-    <>
-      <main className='w-7xl mx-auto flex flex-col items-center justify-center min-h-screen p-4'>
-        <h1 className='text-4xl font-bold mb-4'>Health Check: {health}</h1>
-      </main>
-    </>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Pública */}
+          <Route path="/" element={<LoginView />} />
+          {/* Rediccion Rol */}
+          <Route path="/dashboard" element={<DashboardRedirect />} />
+          {/* Rutas protegidas */}
+           <Route
+            path="/estudiante/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['estudiante']}>
+                <EstudianteDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docente/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['docente']}>
+                <DocenteDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/administrativo/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['administrativo']}>
+                <AdministrativoDashboard />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 

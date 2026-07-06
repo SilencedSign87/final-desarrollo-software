@@ -1,7 +1,11 @@
 import axios from "axios";
 
-const api = axios.create({
-    baseURL: '/api'
+/**
+ * @description Instancia de Axios con la URL base configurada a '/api'
+ */
+export const apiClient = axios.create({
+    baseURL: '/api',
+    withCredentials: true
 })
 
-export const healthCheck = async () => api.get('/health')
+export const healthCheck = async () => apiClient.get('/health')
