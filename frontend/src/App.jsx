@@ -5,6 +5,7 @@ import DashboardRedirect from "./components/DashboardRedirect"
 import ProtectedRoute from "./components/ProtectedRoute"
 import EstudianteDashboard from "./views/Estudiante/Dashboard"
 import DocenteDashboard from "./views/Docente/Dashboard"
+import DocenteShell from "./views/Docente/DocenteShell"
 import AdministrativoDashboard from "./views/Administrativo/Dashboard"
 import EstudianteShell from "./views/Estudiante/EstudianteShell"
 import AdministrativoShell from "./views/Administrativo/AdministraticoShell"
@@ -30,7 +31,19 @@ function App() {
               element={<EstudianteDashboard />}
             />
           </Route>
-          
+          <Route
+            path="/docente/*"
+            element={
+              <ProtectedRoute allowedRoles={['docente']}>
+                <DocenteShell />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              path="dashboard"
+              element={<DocenteDashboard />}
+            />
+          </Route>
           <Route
             path="/administrativo/*"
             element={
