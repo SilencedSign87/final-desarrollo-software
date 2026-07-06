@@ -1,1 +1,44 @@
 @import "tailwindcss";
+
+@utility primary {
+  @apply bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600;
+}
+
+@utility secondary {
+  @apply bg-gray-500 text-white px-4 py-2 rounded-full hover:bg-gray-600;
+}
+
+@utility subtle {
+  @apply bg-transparent text-blue-500 px-4 py-2 rounded-full hover:bg-blue-100;
+}
+
+input {
+  @apply border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+@keyframes spinner-rotate {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spinner-dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -124;
+  }
+}
+
+.spinner-rotate {
+  animation: spinner-rotate 2s linear infinite;
+}
+
+.spinner-dash {
+  animation: spinner-dash 1.5s ease-in-out infinite;
+}
