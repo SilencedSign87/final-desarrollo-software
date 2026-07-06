@@ -6,6 +6,8 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import EstudianteDashboard from "./views/Estudiante/Dashboard"
 import DocenteDashboard from "./views/Docente/Dashboard"
 import AdministrativoDashboard from "./views/Administrativo/Dashboard"
+import EstudianteShell from "./views/Estudiante/EstudianteShell"
+import AdministrativoShell from "./views/Administrativo/AdministraticoShell"
 
 function App() {
   return (
@@ -17,30 +19,31 @@ function App() {
           {/* Rediccion Rol */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
           {/* Rutas protegidas */}
-           <Route
-            path="/estudiante/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['estudiante']}>
-                <EstudianteDashboard />
-              </ProtectedRoute>
-            }
-          />
           <Route
-            path="/docente/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['docente']}>
-                <DocenteDashboard />
-              </ProtectedRoute>
-            }
-          />
+            path="/estudiante/*"
+            element={<ProtectedRoute allowedRoles={['estudiante']}>
+              <EstudianteShell />
+            </ProtectedRoute>}
+          >
+            <Route
+              path="dashboard"
+              element={<EstudianteDashboard />}
+            />
+          </Route>
+          
           <Route
-            path="/administrativo/dashboard"
+            path="/administrativo/*"
             element={
               <ProtectedRoute allowedRoles={['administrativo']}>
-                <AdministrativoDashboard />
+                <AdministrativoShell />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route
+              path="dashboard"
+              element={<AdministrativoDashboard />}
+            />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
