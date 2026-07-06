@@ -1,14 +1,13 @@
-import { Outlet } from "react-router-dom";
-import DashboardShell from "../../components/DashboardShell";
-import LogoutButton from "../../components/LogoutButton";
+import DashboardShell from "../../components/DashboardShell"
+import LogoutButton from "../../components/LogoutButton"
+import { Outlet } from "react-router-dom"
 
-export default function AdministrativoShell() {
+export default function DireccionShell() {
     return (
-        <>
-            <DashboardShell
+        <DashboardShell
                 headerContent={
                     <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                        Bienvenido, Administrativo
+                        Bienvenido, Directivo
                     </h1>
                 }
                 trailingContent={
@@ -17,6 +16,5 @@ export default function AdministrativoShell() {
             >
                 <Outlet />
             </DashboardShell>
-        </>
     )
 }

@@ -9,6 +9,7 @@ import DocenteShell from "./views/Docente/DocenteShell"
 import AdministrativoDashboard from "./views/Administrativo/Dashboard"
 import EstudianteShell from "./views/Estudiante/EstudianteShell"
 import AdministrativoShell from "./views/Administrativo/AdministraticoShell"
+import DireccionShell from "./views/Direccion/DireccionShell"
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           {/* Rediccion Rol */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
           {/* Rutas protegidas */}
+          {/* Estudiante */}
           <Route
             path="/estudiante/*"
             element={<ProtectedRoute allowedRoles={['estudiante']}>
@@ -31,6 +33,7 @@ function App() {
               element={<EstudianteDashboard />}
             />
           </Route>
+          {/* Docente */}
           <Route
             path="/docente/*"
             element={
@@ -44,10 +47,11 @@ function App() {
               element={<DocenteDashboard />}
             />
           </Route>
+          {/* Administrador */}
           <Route
-            path="/administrativo/*"
+            path="/administrador/*"
             element={
-              <ProtectedRoute allowedRoles={['administrativo']}>
+              <ProtectedRoute allowedRoles={['administrador']}>
                 <AdministrativoShell />
               </ProtectedRoute>
             }
@@ -57,6 +61,18 @@ function App() {
               element={<AdministrativoDashboard />}
             />
           </Route>
+          {/* Director */}
+          <Route
+            path="/direccion/*"
+            element={
+              <ProtectedRoute allowedRoles={['direccion']}>
+                <DireccionShell />
+              </ProtectedRoute>
+            }
+          >
+
+          </Route>
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

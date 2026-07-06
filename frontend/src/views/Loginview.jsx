@@ -62,13 +62,12 @@ export default function LoginView() {
                             ? <Spinner />
                             : isAuthenticated
                                 ? <>
-                                    <a href="/dashboard" className='flex flex-col items-center justify-center text-sm font-light text-gray-700'>
+                                    <a href="/dashboard" className='flex flex-col items-center justify-center text-sm font-light text-gray-700 gap-2'>
                                         <p className='font-normal'>
                                             Bienvenido, {user?.nombres} {user?.apellidos}
                                         </p>
-                                        <p className='text-center max-w-xs mt-3'>
-                                            Se redireccionará automáticamente al panel de control en breve. Si no es redirigido, haga clic aquí.
-                                        </p>
+                                        <Spinner/>
+                                        <small>Redirigiendo...</small>
                                     </a>
                                 </>
                                 : <>

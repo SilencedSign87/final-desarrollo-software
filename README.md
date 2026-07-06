@@ -32,6 +32,8 @@ Ejecutar migraciones
 ```bash
 # con el entorno activado
 flask db upgrade
+# Generar usuarios por defecto
+flask seed
 ```
 
 

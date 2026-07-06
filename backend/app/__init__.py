@@ -1,8 +1,8 @@
+from flask import app
 from flask_cors import CORS
 from .config import Config
 from .extensions import db, migrate
 from flask_openapi3 import OpenAPI, Info, Tag
-
 
 def create_app():
     info = Info(
@@ -20,6 +20,14 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     CORS(app)
+
+    # Comandos
+    @app.cli.command("seed")
+    def seed_command():
+        """Crea usuarios por defecto si no existen."""
+        from .seed import seed_default_users
+        seed_default_users()
+
 
     # Registro de modelos
     from .models import (
