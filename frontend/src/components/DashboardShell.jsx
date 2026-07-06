@@ -92,7 +92,7 @@ export default function DashboardShell({ children, leadingContent, trailingConte
 
                 {/* children - el contenido específico de cada dashboard */}
                 <main className="flex-1 overflow-y-auto bg-white" id="main-content" tabIndex={-1}>
-                    <div className="p-8 md:p-4">
+                    <div className="p-6 md:p-4">
                         {children}
                     </div>
                 </main>
