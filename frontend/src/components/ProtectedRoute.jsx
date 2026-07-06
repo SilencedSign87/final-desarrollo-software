@@ -1,11 +1,12 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Spinner from "./spinner";
+import LoadingView from "../views/LoadingView";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
     const { user, isLoading, isAuthenticated } = useAuth()
 
-    if (isLoading) return <Spinner />
+    if (isLoading) return <LoadingView />
     if (!isAuthenticated) return <Navigate to="/" replace />
 
     if (allowedRoles && !allowedRoles.includes(user.rol)) {
