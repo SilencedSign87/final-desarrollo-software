@@ -5,7 +5,7 @@
 }
 
 @utility secondary {
-  @apply bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600;
+  @apply bg-neutral-300 text-black px-4 py-2 rounded-lg hover:bg-neutral-400;
 }
 
 @utility subtle {
