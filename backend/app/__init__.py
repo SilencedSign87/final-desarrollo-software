@@ -49,6 +49,10 @@ def create_app():
 
     app.register_api(auth_bp, url_prefix="/api/auth")
 
+    from .routes.matricula import matricula_bp
+
+    app.register_api(matricula_bp, url_prefix="/api/matriculas")
+
     from .routes.documents import documents_bp
 
     app.register_api(documents_bp, url_prefix="/api/documentos")
