@@ -8,6 +8,7 @@ export default function LoginView() {
     const { user, isLoading, isAuthenticated, login } = useAuth()
     const navigate = useNavigate()
     const [health, setHealth] = useState("")
+    const [error, setError] = useState(null)
 
     const handleSubmit = async (event) => {
         event.preventDefault()
@@ -24,6 +25,7 @@ export default function LoginView() {
             }
         } catch (error) {
             console.error('Error during login:', error)
+            setError('Credenciales inválidas')
         }
     }
 
@@ -87,6 +89,9 @@ export default function LoginView() {
                                                 Login
                                             </button>
                                         </fieldset>
+                                        {
+                                            error && <p className='mt-2 text-sm text-red-500 text-center'>{error}</p>
+                                        }
                                     </form>
                                     <div className='mt-6 flex flex-col items-center justify-center'>
                                         <p className='mt-2 text-sm text-gray-500'>¿Olvidó su contraseña? <a href="/reset-password" className='text-blue-500 hover:underline'>Recupérela aquí</a></p>

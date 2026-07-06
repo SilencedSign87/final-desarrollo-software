@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import LoginView from "./views/Loginview"
 import { AuthProvider } from "./context/AuthContext"
 import DashboardRedirect from "./components/DashboardRedirect"
@@ -10,6 +10,7 @@ import AdministrativoDashboard from "./views/Administrativo/Dashboard"
 import EstudianteShell from "./views/Estudiante/EstudianteShell"
 import AdministrativoShell from "./views/Administrativo/AdministraticoShell"
 import DireccionShell from "./views/Direccion/DireccionShell"
+import RegisterView from "./views/RegisterView"
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
         <Routes>
           {/* Pública */}
           <Route path="/" element={<LoginView />} />
+          <Route path="/login" element={<Navigate to="/" />} />
+          <Route path="/register" element={<RegisterView />} />
           {/* Rediccion Rol */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
           {/* Rutas protegidas */}
