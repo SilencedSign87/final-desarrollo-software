@@ -18,7 +18,7 @@ export default function DashboardShell({ children, leadingContent, trailingConte
             {/* Sidebar */}
             <aside
                 className={`
-                    fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-white md:bg-neutral-200 border-r border-neutral-400 md:border-neutral-300 
+                    fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-neutral-100 md:bg-neutral-200 border-r border-neutral-400 md:border-neutral-300 
                     transition-transform duration-300 ease-in-out
                     md:static md:translate-x-0
                     ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}

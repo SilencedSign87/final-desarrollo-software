@@ -17,6 +17,9 @@ import DireccionDashboard from "./views/Direccion/Dashboard"
 import DireccionDocumentos from "./views/Direccion/Documentos"
 import DireccionAuditorias from "./views/Direccion/Auditorias"
 import RegisterView from "./views/RegisterView"
+import CursosDocente from "./views/Docente/CursosDocente"
+import SeccionesDocente from "./views/Docente/SeccionesDocente"
+import NotasDocente from "./views/Docente/NotasDocente"
 
 function App() {
   return (
@@ -54,6 +57,9 @@ function App() {
             }
           >
             <Route path="dashboard" element={<DocenteDashboard />} />
+            <Route path="cursos" element={<CursosDocente />} />
+            <Route path="secciones" element={<SeccionesDocente />} />
+            <Route path="notas" element={<NotasDocente />} />
           </Route>
 
           {/* Administrador */}
