@@ -76,5 +76,9 @@ def create_app():
     from .routes.docente import docente_bp
 
     app.register_api(docente_bp, url_prefix="/api/docentes")
+    
+    from .routes.seccion import seccion_bp
+
+    app.register_api(seccion_bp, url_prefix="/api/secciones")
 
     return app
