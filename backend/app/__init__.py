@@ -81,4 +81,8 @@ def create_app():
 
     app.register_api(seccion_bp, url_prefix="/api/secciones")
 
+    from .routes.horario import horario_bp
+
+    app.register_api(horario_bp, url_prefix="/api/horarios")
+
     return app
