@@ -2,9 +2,9 @@
 
 # Integrantes
 
--   
--   
--   
+-   Alarcón Mendoza Estiven Rodrigo
+-   Araujo Champi José Eduardo
+-   Diaz Vega Bruno Nivardo
 
 # Arquitectura de proyecto
 
