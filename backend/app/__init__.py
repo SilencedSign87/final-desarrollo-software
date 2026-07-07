@@ -69,4 +69,8 @@ def create_app():
 
     app.register_api(security_bp, url_prefix="/api/seguridad")
 
+    from .routes.curso import curso_bp
+
+    app.register_api(curso_bp, url_prefix="/api/cursos")
+
     return app
