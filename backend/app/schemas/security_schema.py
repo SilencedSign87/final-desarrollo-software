@@ -1,6 +1,12 @@
 from pydantic import BaseModel, Field
 
 
+class UserIdPath(BaseModel):
+    """Schema para identificar un usuario en la URL."""
+
+    user_id: int
+
+
 class RoleUpdate(BaseModel):
     """Schema para actualizar el perfil de acceso de un usuario."""
 

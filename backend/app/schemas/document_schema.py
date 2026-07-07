@@ -4,6 +4,12 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class SolicitudDocumentoPath(BaseModel):
+    """Schema para identificar una solicitud en la URL."""
+
+    solicitud_id: int
+
+
 class SolicitudDocumentoCreate(BaseModel):
     """Schema para solicitar certificados o constancias."""
 

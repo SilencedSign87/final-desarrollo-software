@@ -5,7 +5,7 @@ from ..middleware import auth_required, roles_required
 from ..models.solicitud_documento import SolicitudDocumento
 from ..models.user import User
 from ..schemas.generic_schema import ErrorResponse
-from ..schemas.security_schema import AuditReportResponse, RoleUpdate
+from ..schemas.security_schema import AuditReportResponse, RoleUpdate, UserIdPath
 from ..schemas.user_schema import UserResponse
 
 security_tag = Tag(
@@ -54,9 +54,9 @@ def list_users():
     responses={"200": UserResponse, "403": ErrorResponse, "404": ErrorResponse},
 )
 @roles_required("administrador")
-def update_user_role(user_id: int, body: RoleUpdate):
+def update_user_role(path: UserIdPath, body: RoleUpdate):
     """Definir o actualizar el perfil de acceso de un usuario."""
-    user = User.query.get(user_id)
+    user = User.query.get(path.user_id)
     if not user:
         return {"error": "Usuario no encontrado"}, 404
 

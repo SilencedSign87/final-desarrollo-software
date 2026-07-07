@@ -10,6 +10,7 @@ from ..schemas.document_schema import (
     DocumentoAutorizar,
     DocumentoEmitir,
     SolicitudDocumentoCreate,
+    SolicitudDocumentoPath,
     SolicitudDocumentoResponse,
 )
 from ..schemas.generic_schema import ErrorResponse
@@ -81,9 +82,9 @@ def create_document_request(body: SolicitudDocumentoCreate):
     responses={"200": SolicitudDocumentoResponse, "403": ErrorResponse, "404": ErrorResponse},
 )
 @roles_required("direccion")
-def authorize_document_request(solicitud_id: int, body: DocumentoAutorizar):
+def authorize_document_request(path: SolicitudDocumentoPath, body: DocumentoAutorizar):
     """Autorizar o rechazar la emision de documentos oficiales."""
-    solicitud = SolicitudDocumento.query.get(solicitud_id)
+    solicitud = SolicitudDocumento.query.get(path.solicitud_id)
     if not solicitud:
         return {"error": "Solicitud no encontrada"}, 404
 
@@ -98,9 +99,9 @@ def authorize_document_request(solicitud_id: int, body: DocumentoAutorizar):
     responses={"200": SolicitudDocumentoResponse, "403": ErrorResponse, "404": ErrorResponse},
 )
 @roles_required("administrador")
-def issue_document(solicitud_id: int, body: DocumentoEmitir):
+def issue_document(path: SolicitudDocumentoPath, body: DocumentoEmitir):
     """Emitir certificados con firma digital o codigo QR."""
-    solicitud = SolicitudDocumento.query.get(solicitud_id)
+    solicitud = SolicitudDocumento.query.get(path.solicitud_id)
     if not solicitud:
         return {"error": "Solicitud no encontrada"}, 404
 
