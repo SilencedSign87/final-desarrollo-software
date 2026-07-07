@@ -16,6 +16,16 @@ security_tag = Tag(
 security_bp = APIBlueprint("security", __name__, abp_tags=[security_tag])
 
 
+def _serialize_user(user):
+    return UserResponse(
+        id=user.id,
+        nombres=user.nombres,
+        apellidos=user.apellidos,
+        email=user.email,
+        rol=user.rol,
+    ).model_dump()
+
+
 @security_bp.get(
     "/roles",
     responses={"200": {"description": "Listado de roles disponibles"}, "401": ErrorResponse},
@@ -26,6 +36,17 @@ def list_roles():
     return {
         "data": ["estudiante", "docente", "administrador", "direccion"],
     }, 200
+
+
+@security_bp.get(
+    "/usuarios",
+    responses={"200": {"description": "Listado de usuarios"}, "403": ErrorResponse},
+)
+@roles_required("administrador")
+def list_users():
+    """Listar usuarios para gestion de perfiles de acceso."""
+    users = User.query.order_by(User.id.asc()).all()
+    return {"data": [_serialize_user(user) for user in users]}, 200
 
 
 @security_bp.put(
@@ -43,13 +64,7 @@ def update_user_role(user_id: int, body: RoleUpdate):
     db.session.commit()
 
     return (
-        UserResponse(
-            id=user.id,
-            nombres=user.nombres,
-            apellidos=user.apellidos,
-            email=user.email,
-            rol=user.rol,
-        ).model_dump(),
+        _serialize_user(user),
         200,
     )
 

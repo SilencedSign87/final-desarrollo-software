@@ -1,4 +1,4 @@
-import { BookOpen, GraduationCap, LayoutDashboard, User } from "lucide-react";
+import { BookOpen, GraduationCap, LayoutDashboard, User, FileText } from "lucide-react";
 import DashboardShell from "../../components/DashboardShell";
 import LogoutButton from "../../components/LogoutButton";
 import { useAuth } from "../../context/AuthContext";
@@ -8,6 +8,7 @@ const routes = [
     { path: '/estudiante/dashboard', icon: LayoutDashboard, name: 'Dashboard' },
     { path: '/estudiante/cursos', icon: BookOpen, name: 'Mis Cursos' },
     { path: '/estudiante/notas', icon: GraduationCap, name: 'Notas' },
+    { path: '/estudiante/documentos', icon: FileText, name: 'Documentos' },
     { path: '/estudiante/perfil', icon: User, name: 'Perfil' },
 ]
 
