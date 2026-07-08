@@ -1,6 +1,7 @@
 import DocumentStatusBadge from './DocumentStatusBadge'
+import { getDocumentDownloadUrl } from '../../services/documentsService'
 
-export default function DocumentRequestsTable({ requests, emptyMessage, actions }) {
+export default function DocumentRequestsTable({ requests, emptyMessage, actions, showDownload = false }) {
     if (!requests?.length) {
         return (
             <p className="rounded-lg border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500">
@@ -19,6 +20,9 @@ export default function DocumentRequestsTable({ requests, emptyMessage, actions 
                         <th className="px-4 py-3 text-left font-medium text-neutral-600">Documento</th>
                         <th className="px-4 py-3 text-left font-medium text-neutral-600">Estado</th>
                         <th className="px-4 py-3 text-left font-medium text-neutral-600">Fecha</th>
+                        {showDownload && (
+                            <th className="px-4 py-3 text-left font-medium text-neutral-600">PDF / QR</th>
+                        )}
                         {actions && (
                             <th className="px-4 py-3 text-left font-medium text-neutral-600">Acciones</th>
                         )}
@@ -36,6 +40,29 @@ export default function DocumentRequestsTable({ requests, emptyMessage, actions 
                             <td className="px-4 py-3 text-neutral-600">
                                 {new Date(request.fecha_creacion).toLocaleString()}
                             </td>
+                            {showDownload && (
+                                <td className="px-4 py-3">
+                                    {request.estado === 'emitido' ? (
+                                        <div className="space-y-1">
+                                            <a
+                                                href={getDocumentDownloadUrl(request.id)}
+                                                className="block text-blue-700 hover:underline"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                Descargar PDF
+                                            </a>
+                                            {request.qr_hash && (
+                                                <span className="block text-xs text-neutral-500">
+                                                    QR: {request.qr_hash.slice(0, 12)}...
+                                                </span>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <span className="text-xs text-neutral-500">No disponible</span>
+                                    )}
+                                </td>
+                            )}
                             {actions && (
                                 <td className="px-4 py-3">{actions(request)}</td>
                             )}

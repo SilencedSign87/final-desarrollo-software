@@ -146,6 +146,7 @@ export default function EstudianteDocumentos() {
                     <DocumentRequestsTable
                         requests={requests}
                         emptyMessage="Aún no has solicitado documentos."
+                        showDownload
                     />
                 )}
             </div>

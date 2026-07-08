@@ -12,6 +12,14 @@ export const authorizeDocumentRequest = async (requestId, data) => {
     return apiClient.post(`/documentos/solicitudes/${requestId}/autorizar`, data)
 }
 
-export const issueDocument = async (requestId, data) => {
-    return apiClient.post(`/documentos/solicitudes/${requestId}/emitir`, data)
+export const issueDocument = async (requestId) => {
+    return apiClient.post(`/documentos/solicitudes/${requestId}/emitir`)
+}
+
+export const getDocumentDownloadUrl = (requestId) => {
+    return `/api/documentos/solicitudes/${requestId}/archivo`
+}
+
+export const verifyDocument = async (qrHash) => {
+    return apiClient.get(`/documentos/verificar/${qrHash}`)
 }

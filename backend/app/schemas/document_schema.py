@@ -17,10 +17,28 @@ class SolicitudDocumentoCreate(BaseModel):
 
 
 class DocumentoEmitir(BaseModel):
-    """Schema para registrar la emision de un documento."""
+    """Schema reservado para emision manual opcional."""
 
-    archivo_url: str = Field(..., min_length=5, max_length=255)
+    archivo_url: Optional[str] = Field(default=None, min_length=5, max_length=255)
+    qr_hash: Optional[str] = Field(default=None, min_length=5, max_length=255)
+
+
+class QrVerificacionPath(BaseModel):
+    """Schema para verificar un documento mediante su codigo QR."""
+
     qr_hash: str = Field(..., min_length=5, max_length=255)
+
+
+class DocumentoVerificacionResponse(BaseModel):
+    """Schema de respuesta para verificacion de documentos."""
+
+    valido: bool
+    solicitud_id: Optional[int] = None
+    tipo_documento: Optional[str] = None
+    estudiante: Optional[str] = None
+    estado: Optional[str] = None
+    fecha_emision: Optional[datetime] = None
+    mensaje: str
 
 
 class DocumentoAutorizar(BaseModel):

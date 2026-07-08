@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FileCheck, QrCode } from 'lucide-react'
+import { FileCheck } from 'lucide-react'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
@@ -8,7 +8,6 @@ import { getDocumentRequests, issueDocument } from '../../services/documentsServ
 export default function AdministrativoDocumentos() {
     const [requests, setRequests] = useState([])
     const [selectedRequest, setSelectedRequest] = useState(null)
-    const [issueForm, setIssueForm] = useState({ archivo_url: '', qr_hash: '' })
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
@@ -58,22 +57,17 @@ export default function AdministrativoDocumentos() {
 
     const openIssueDialog = (request) => {
         setSelectedRequest(request)
-        setIssueForm({
-            archivo_url: request.archivo_url ?? '',
-            qr_hash: request.qr_hash ?? '',
-        })
         setDialogOpen(true)
     }
 
-    const handleIssue = async (event) => {
-        event.preventDefault()
+    const handleIssue = async () => {
         if (!selectedRequest) return
 
         setIsSubmitting(true)
         setError(null)
 
         try {
-            await issueDocument(selectedRequest.id, issueForm)
+            await issueDocument(selectedRequest.id)
             setDialogOpen(false)
             setSelectedRequest(null)
             await loadRequests({ showLoading: true })
@@ -89,7 +83,7 @@ export default function AdministrativoDocumentos() {
             <div>
                 <h2 className="text-2xl font-semibold text-slate-900">Emisión de documentos</h2>
                 <p className="mt-1 text-sm text-neutral-600">
-                    Emite certificados autorizados con archivo y código QR.
+                    Emite certificados autorizados. El sistema generará el PDF y el código QR automáticamente.
                 </p>
             </div>
 
@@ -107,6 +101,7 @@ export default function AdministrativoDocumentos() {
                 <DocumentRequestsTable
                     requests={requests}
                     emptyMessage="No hay solicitudes registradas."
+                    showDownload
                     actions={(request) =>
                         request.estado === 'autorizado' ? (
                             <button
@@ -131,52 +126,24 @@ export default function AdministrativoDocumentos() {
                     <Dialog.Header>Emitir documento</Dialog.Header>
                     <Dialog.Content>
                         {selectedRequest && (
-                            <form id="issue-document-form" className="space-y-4" onSubmit={handleIssue}>
-                                <p className="text-sm text-neutral-600">
+                            <div className="space-y-3 text-sm text-neutral-600">
+                                <p>
                                     Solicitud #{selectedRequest.id} · {selectedRequest.tipo_documento}
                                 </p>
-                                <label className="flex flex-col gap-2 text-sm">
-                                    URL del archivo
-                                    <input
-                                        required
-                                        value={issueForm.archivo_url}
-                                        onChange={(event) =>
-                                            setIssueForm((current) => ({
-                                                ...current,
-                                                archivo_url: event.target.value,
-                                            }))
-                                        }
-                                        placeholder="https://..."
-                                    />
-                                </label>
-                                <label className="flex flex-col gap-2 text-sm">
-                                    <span className="inline-flex items-center gap-2">
-                                        <QrCode className="h-4 w-4" />
-                                        Hash QR
-                                    </span>
-                                    <input
-                                        required
-                                        value={issueForm.qr_hash}
-                                        onChange={(event) =>
-                                            setIssueForm((current) => ({
-                                                ...current,
-                                                qr_hash: event.target.value,
-                                            }))
-                                        }
-                                        placeholder="hash-verificacion"
-                                    />
-                                </label>
-                            </form>
+                                <p>
+                                    Al confirmar, el sistema generará un PDF oficial con código QR de verificación.
+                                </p>
+                            </div>
                         )}
                     </Dialog.Content>
                     <Dialog.Footer>
                         <button
-                            type="submit"
-                            form="issue-document-form"
+                            type="button"
                             className="primary"
                             disabled={isSubmitting}
+                            onClick={handleIssue}
                         >
-                            {isSubmitting ? 'Emitiendo...' : 'Confirmar emisión'}
+                            {isSubmitting ? 'Generando PDF...' : 'Confirmar emisión'}
                         </button>
                         <Dialog.Trigger className="subtle">Cancelar</Dialog.Trigger>
                     </Dialog.Footer>
