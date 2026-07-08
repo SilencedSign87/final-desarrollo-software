@@ -25,8 +25,9 @@ def create_app():
     @app.cli.command("seed")
     def seed_command():
         """Crea usuarios por defecto si no existen."""
-        from .seed import seed_default_users
+        from .seed import seed_default_users, seed_test_data
         seed_default_users()
+        seed_test_data()
 
 
     # Registro de modelos
@@ -84,5 +85,13 @@ def create_app():
     from .routes.horario import horario_bp
 
     app.register_api(horario_bp, url_prefix="/api/horarios")
+
+    from .routes.periodo_academico import periodo_academico_bp
+    
+    app.register_api(periodo_academico_bp, url_prefix="/api/periodos-academicos")
+
+    from .routes.evaluaciones import evaluaciones_bp
+    
+    app.register_api(evaluaciones_bp, url_prefix="/api/evaluaciones")
 
     return app
