@@ -54,3 +54,21 @@ class EstudianteSimpleResponse(BaseModel):
 
 class TipoEvaluacionListResponse(RootModel[list[TipoEvaluacionResponse]]):
     pass
+
+class NotaPorTipoEvaluacion(BaseModel):
+    tipo_evaluacion_id: int
+    evaluacion_id: int | None = None
+    nota: Decimal | None = None
+
+
+class EstudianteConNotasResponse(BaseModel):
+    detalle_matricula_id: int
+    estudiante_id: int
+    estudiante_nombre: str
+    notas: list[NotaPorTipoEvaluacion]
+    promedio_final: Decimal | None = None
+
+
+class NotasSeccionResponse(BaseModel):
+    tipos_evaluacion: list[TipoEvaluacionResponse]
+    estudiantes: list[EstudianteConNotasResponse]

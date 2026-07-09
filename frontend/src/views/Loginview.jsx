@@ -3,15 +3,18 @@ import { healthCheck } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import Spinner from '../components/spinner'
 import { useNavigate } from 'react-router-dom'
+import { AtSign, KeyRound } from 'lucide-react'
 
 export default function LoginView() {
     const { user, isLoading, isAuthenticated, login } = useAuth()
+    const [submitting, setSubmitting] = useState(false)
     const navigate = useNavigate()
     const [health, setHealth] = useState("")
     const [error, setError] = useState(null)
 
     const handleSubmit = async (event) => {
         event.preventDefault()
+        setSubmitting(true)
         const credentials = {
             email: event.target.email.value,
             password: event.target.password.value
@@ -19,13 +22,13 @@ export default function LoginView() {
         try {
             const response = await login(credentials)
             if (response?.data) {
-                setTimeout(() => {
-                    navigate('/dashboard')
-                }, 1000)
+                navigate('/dashboard')
             }
         } catch (error) {
             console.error('Error during login:', error)
             setError('Credenciales inválidas')
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -44,12 +47,9 @@ export default function LoginView() {
 
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
-            const timer = setTimeout(() => {
-                navigate('/dashboard')
-            }, 1000)
-            return () => clearTimeout(timer)
+            navigate('/dashboard')
         }
-    }, [isLoading, isAuthenticated])
+    }, [isLoading, isAuthenticated, navigate])
 
     return (
         <>
@@ -68,7 +68,7 @@ export default function LoginView() {
                                         <p className='font-normal'>
                                             Bienvenido, {user?.nombres} {user?.apellidos}
                                         </p>
-                                        <Spinner/>
+                                        <Spinner />
                                         <small>Redirigiendo...</small>
                                     </a>
                                 </>
@@ -76,17 +76,28 @@ export default function LoginView() {
                                     <form onSubmit={handleSubmit}>
                                         <fieldset>
                                             <label className='flex flex-col gap-2'>
-                                                Email:
-                                                <input type="email" name="email" required />
+                                                Correo:
+                                                <div className='grid grid-cols-[auto_1fr] border border-neutral-300 rounded-lg px-2'>
+                                                    <AtSign className=' text-gray-400 self-center' size={20} />
+                                                    <input type="email" name="email" className="transparent" required />
+                                                </div>
                                             </label>
-                                            <label className='flex flex-col gap-2'>
-                                                Password:
-                                                <input type="password" name="password" required />
+                                            <label className='flex flex-col gap-2 mt-2'>
+                                                Contraseña:
+                                                <div className='grid grid-cols-[auto_1fr] border border-neutral-300 rounded-lg px-2'>
+                                                    <KeyRound className=' text-gray-400 self-center' size={20} />
+                                                    <input type="password" name="password" className="transparent" required />
+                                                </div>
                                             </label>
                                         </fieldset>
                                         <fieldset className='mt-4'>
-                                            <button type="submit" className='primary w-full'>
-                                                Login
+                                            <button type="submit" className='primary flex w-full items-center justify-center gap-2' disabled={submitting}>
+                                                {
+                                                    submitting && <Spinner color='#ffffff' strokeWidth={2} size={20} className='block' />
+                                                }
+                                                <span className='block'>
+                                                    Acceder
+                                                </span>
                                             </button>
                                         </fieldset>
                                         {

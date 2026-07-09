@@ -1,3 +1,5 @@
+from marshmallow.fields import Decimal
+
 from ..extensions import db
 from ..models.evaluacion import Evaluacion
 from ..models.tipo_evaluacion import TipoEvaluacion
@@ -123,3 +125,82 @@ class EvaluacionService:
         if not detalle:
             return None
         return detalle.matricula.estudiante
+    
+    @staticmethod
+    def listar_notas_por_seccion(seccion_id):
+        from ..models import Matricula, Estudiante, User
+
+        # Tipos de evaluación de la sección
+        tipos = TipoEvaluacion.query.filter_by(seccion_id=seccion_id).all()
+        if not tipos:
+            return {"tipos_evaluacion": [], "estudiantes": []}
+
+        # Detalles de matrícula de la sección con datos del estudiante
+        detalles = (
+            db.session.query(
+                DetalleMatricula.id,
+                Estudiante.id,
+                User.nombres,
+                User.apellidos,
+                DetalleMatricula.promedio_final,
+            )
+            .join(Matricula, Matricula.id == DetalleMatricula.matricula_id)
+            .join(Estudiante, Estudiante.id == Matricula.estudiante_id)
+            .join(User, User.id == Estudiante.user_id)
+            .filter(DetalleMatricula.seccion_id == seccion_id)
+            .all()
+        )
+
+        detalle_ids = [d[0] for d in detalles]
+        tipo_ids = [t.id for t in tipos]
+
+        # Evaluaciones existentes → lookup (detalle_id, tipo_id) -> evaluacion
+        evaluaciones = Evaluacion.query.filter(
+            Evaluacion.detalle_matricula_id.in_(detalle_ids),
+            Evaluacion.tipo_evaluacion_id.in_(tipo_ids),
+        ).all()
+
+        eval_map: dict[tuple[int, int], Evaluacion] = {
+            (e.detalle_matricula_id, e.tipo_evaluacion_id): e
+            for e in evaluaciones
+        }
+
+        estudiantes = []
+        for detalle_id, est_id, nombres, apellidos, promedio in detalles:
+            notas = []
+            suma_ponderada = Decimal("0")
+            suma_pesos = Decimal("0")
+
+            for t in tipos:
+                e = eval_map.get((detalle_id, t.id))
+                nota_valor = e.nota if e else None
+                notas.append({
+                    "tipo_evaluacion_id": t.id,
+                    "evaluacion_id": e.id if e else None,
+                    "nota": nota_valor,
+                })
+                if nota_valor is not None:
+                    suma_ponderada += nota_valor * t.peso
+                    suma_pesos += t.peso
+
+            promedio_calculado = (
+                (suma_ponderada / suma_pesos).quantize(Decimal("0.00"))
+                if suma_pesos > 0 else None
+            )
+
+            estudiantes.append({
+                "detalle_matricula_id": detalle_id,
+                "estudiante_id": est_id,
+                "estudiante_nombre": f"{nombres} {apellidos}",
+                "notas": notas,
+                "promedio_final": promedio or promedio_calculado,
+            })
+
+        return {
+            "tipos_evaluacion": [
+                {"id": t.id, "seccion_id": t.seccion_id, "nombre": t.nombre, "peso": t.peso}
+                for t in tipos
+            ],
+            "estudiantes": estudiantes,
+        }
+

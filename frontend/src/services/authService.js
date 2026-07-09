@@ -1,6 +1,6 @@
 import { apiClient } from "./api"
 
-export const Login = async (credentials) => {
+export const Login = (credentials) => {
     if (!credentials.email || !credentials.password) {
         throw new Error("Email and password are required")
     }
@@ -8,7 +8,7 @@ export const Login = async (credentials) => {
     return apiClient.post('/auth/login', credentials)
 }
 
-export const Register = async (userData) => {
+export const Register = (userData) => {
     if (!userData.nombres || !userData.apellidos || !userData.email || !userData.password || !userData.dni || !userData.rol) {
         throw new Error("Todos los campos son obligatorios")
     }
@@ -16,10 +16,10 @@ export const Register = async (userData) => {
     return apiClient.post('/auth/register', userData)
 }
 
-export const Logout = async () => {
+export const Logout = () => {
     return apiClient.post('/auth/logout')
 }
 
-export const CheckAuth = async () => {
-    return await apiClient.get('/auth/current_user')
+export const CheckAuth = () => {
+    return apiClient.get('/auth/current_user')
 }

@@ -15,8 +15,17 @@
 input {
   @apply border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
 }
+
+input.transparent {
+  @apply bg-transparent border border-transparent rounded-md px-3 py-2 focus:ring-transparent focus:border-transparent;
+}
+
 select{
   @apply border border-gray-300 rounded-md px-3 py-1.5 focus:border-gray-500;
+}
+
+select.transparent{
+  @apply bg-transparent border border-transparent rounded-md px-3 py-1.5 focus:ring-transparent focus:border-transparent;
 }
 
 @keyframes spinner-rotate {
@@ -44,4 +53,20 @@ select{
 
 .spinner-dash {
   animation: spinner-dash 1.5s ease-in-out infinite;
+}
+
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@utility animate-shimmer {
+  background: linear-gradient(90deg, #d1d5db 25%, #f3f4f6 50%, #d1d5db 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }

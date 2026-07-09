@@ -5,6 +5,7 @@ from ..schemas.evaluacion_schema import (
     EvaluacionUpdate,
     EvaluacionResponse,
     EvaluacionListResponse,
+    NotasSeccionResponse,
     TipoEvaluacionCreate,
     TipoEvaluacionUpdate,
     TipoEvaluacionResponse,
@@ -15,9 +16,7 @@ from ..schemas.generic_schema import ErrorResponse
 from ..services.evaluacion_service import EvaluacionService, TipoEvaluacionService
 from ..services.auth_service import AuthService
 
-evaluaciones_tag = Tag(
-    name="Evaluaciones", description="Gestión de evaluaciones"
-)
+evaluaciones_tag = Tag(name="Evaluaciones", description="Gestión de evaluaciones")
 evaluaciones_bp = APIBlueprint("evaluaciones", __name__, abp_tags=[evaluaciones_tag])
 
 
@@ -26,8 +25,12 @@ class EvaluacionPath(BaseModel):
 
 
 class EvaluacionQuery(BaseModel):
-    tipo_evaluacion_id: int | None = Field(None, description="Filtrar por tipo de evaluación")
-    detalle_matricula_id: int | None = Field(None, description="Filtrar por detalle de matrícula")
+    tipo_evaluacion_id: int | None = Field(
+        None, description="Filtrar por tipo de evaluación"
+    )
+    detalle_matricula_id: int | None = Field(
+        None, description="Filtrar por detalle de matrícula"
+    )
 
 
 class TipoEvaluacionPath(BaseModel):
@@ -141,7 +144,11 @@ def eliminar_evaluacion(path: EvaluacionPath):
 
 @evaluaciones_bp.post(
     "/tipo-evaluaciones/",
-    responses={"201": TipoEvaluacionResponse, "400": ErrorResponse, "401": ErrorResponse},
+    responses={
+        "201": TipoEvaluacionResponse,
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+    },
 )
 def crear_tipo_evaluacion(body: TipoEvaluacionCreate):
     """Crear un tipo de evaluación"""
@@ -154,9 +161,12 @@ def crear_tipo_evaluacion(body: TipoEvaluacionCreate):
     except ValueError as e:
         return {"error": str(e)}, 400
 
-    return TipoEvaluacionResponse(
-        id=tipo.id, seccion_id=tipo.seccion_id, nombre=tipo.nombre, peso=tipo.peso
-    ).model_dump(), 201
+    return (
+        TipoEvaluacionResponse(
+            id=tipo.id, seccion_id=tipo.seccion_id, nombre=tipo.nombre, peso=tipo.peso
+        ).model_dump(),
+        201,
+    )
 
 
 @evaluaciones_bp.get(
@@ -168,9 +178,12 @@ def obtener_tipo_evaluacion(path: TipoEvaluacionPath):
     tipo = TipoEvaluacionService.obtener_tipo_evaluacion(path.tipo_evaluacion_id)
     if not tipo:
         return {"error": "Tipo de evaluación no encontrado"}, 404
-    return TipoEvaluacionResponse(
-        id=tipo.id, seccion_id=tipo.seccion_id, nombre=tipo.nombre, peso=tipo.peso
-    ).model_dump(), 200
+    return (
+        TipoEvaluacionResponse(
+            id=tipo.id, seccion_id=tipo.seccion_id, nombre=tipo.nombre, peso=tipo.peso
+        ).model_dump(),
+        200,
+    )
 
 
 @evaluaciones_bp.put(
@@ -197,9 +210,12 @@ def actualizar_tipo_evaluacion(path: TipoEvaluacionPath, body: TipoEvaluacionUpd
 
     if not tipo:
         return {"error": "Tipo de evaluación no encontrado"}, 404
-    return TipoEvaluacionResponse(
-        id=tipo.id, seccion_id=tipo.seccion_id, nombre=tipo.nombre, peso=tipo.peso
-    ).model_dump(), 200
+    return (
+        TipoEvaluacionResponse(
+            id=tipo.id, seccion_id=tipo.seccion_id, nombre=tipo.nombre, peso=tipo.peso
+        ).model_dump(),
+        200,
+    )
 
 
 @evaluaciones_bp.delete(
@@ -253,8 +269,31 @@ def obtener_estudiante_de_evaluacion(path: EvaluacionPath):
     estudiante = EvaluacionService.obtener_estudiante(path.evaluacion_id)
     if not estudiante:
         return {"error": "Evaluación no encontrada"}, 404
-    return EstudianteSimpleResponse(
-        id=estudiante.id,
-        user_id=estudiante.user_id,
-        plan_estudios_id=estudiante.plan_estudios_id,
-    ).model_dump(), 200
+    return (
+        EstudianteSimpleResponse(
+            id=estudiante.id,
+            user_id=estudiante.user_id,
+            plan_estudios_id=estudiante.plan_estudios_id,
+        ).model_dump(),
+        200,
+    )
+
+
+class SeccionPath(BaseModel):
+    seccion_id: int = Field(..., description="ID de la sección")
+
+
+@evaluaciones_bp.get(
+    "/seccion/<int:seccion_id>/notas",
+    responses={"200": NotasSeccionResponse, "404": ErrorResponse},
+)
+def listar_notas_por_seccion(path: SeccionPath):
+    """Listar estudiantes con sus notas por tipo de evaluación para una sección"""
+    from ..models.seccion import Seccion
+
+    seccion = Seccion.query.get(path.seccion_id)
+    if not seccion:
+        return {"error": "Sección no encontrada"}, 404
+
+    resultados = EvaluacionService.listar_notas_por_seccion(path.seccion_id)
+    return resultados, 200
