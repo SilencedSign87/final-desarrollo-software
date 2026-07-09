@@ -21,6 +21,8 @@ import CursosDocente from "./views/Docente/CursosDocente"
 import SeccionesDocente from "./views/Docente/SeccionesDocente"
 import NotasDocente from "./views/Docente/NotasDocente"
 import EstudianteMatricula from "./views/Estudiante/Matricula"
+import AdministrativoMatricula from "./views/Administrativo/Matricula"
+import DireccionMatricula from "./views/Direccion/Matricula"
 
 function App() {
   return (
@@ -74,6 +76,7 @@ function App() {
             }
           >
             <Route path="dashboard" element={<AdministrativoDashboard />} />
+            <Route path="matricula" element={<AdministrativoMatricula />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
             <Route path="seguridad" element={<AdministrativoSeguridad />} />
           </Route>
@@ -88,6 +91,7 @@ function App() {
             }
           >
             <Route path="dashboard" element={<DireccionDashboard />} />
+            <Route path="matricula" element={<DireccionMatricula />} />
             <Route path="documentos" element={<DireccionDocumentos />} />
             <Route path="auditorias" element={<DireccionAuditorias />} />
           </Route>

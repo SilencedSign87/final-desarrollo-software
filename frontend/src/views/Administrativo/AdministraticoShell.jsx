@@ -1,4 +1,4 @@
-import { FileText, LayoutDashboard, Shield } from "lucide-react";
+import { FileText, LayoutDashboard, Shield, ClipboardList } from "lucide-react";
 import { Outlet } from "react-router-dom";
 import DashboardShell from "../../components/DashboardShell";
 import LogoutButton from "../../components/LogoutButton";
@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const routes = [
     { path: '/administrador/dashboard', icon: LayoutDashboard, name: 'Dashboard' },
+    { path: '/administrador/matricula', icon: ClipboardList, name: 'Matrícula' },
     { path: '/administrador/documentos', icon: FileText, name: 'Documentos' },
     { path: '/administrador/seguridad', icon: Shield, name: 'Seguridad' },
 ]
