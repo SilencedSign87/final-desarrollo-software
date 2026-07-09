@@ -1,3 +1,8 @@
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import cm
+from reportlab.pdfgen import canvas
+
 from ..extensions import db
 from ..models.matricula import Matricula
 from ..models.detalle_matricula import DetalleMatricula
@@ -87,3 +92,83 @@ class MatriculaService:
             .all()
         )
         return {estado: total for estado, total in resultados}
+
+    @staticmethod
+    def generar_ficha_pdf(matricula_id):
+        """
+        Genera el PDF de la ficha de matrícula con los datos del estudiante,
+        periodo académico, cursos matriculados y quién la validó.
+        Lanza ValueError si la matrícula no está en estado 'validada'
+        (no tiene sentido entregar una ficha oficial de algo aún no aprobado).
+        Devuelve un BytesIO con el PDF listo para enviar, o None si no existe.
+        """
+        matricula = Matricula.query.get(matricula_id)
+        if not matricula:
+            return None
+
+        if matricula.estado != "validada":
+            raise ValueError(
+                "Solo se puede descargar la ficha de una matrícula validada"
+            )
+
+        estudiante = matricula.estudiante
+        user = estudiante.user
+        periodo = matricula.periodo_academico
+
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+
+        y = height - 2 * cm
+        c.setFont("Helvetica-Bold", 16)
+        c.drawCentredString(width / 2, y, "FICHA DE MATRÍCULA")
+        y -= 0.8 * cm
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(width / 2, y, "Universidad Nacional del Centro del Perú")
+        y -= 1.5 * cm
+
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(2 * cm, y, "Datos del estudiante")
+        y -= 0.7 * cm
+        c.setFont("Helvetica", 10)
+        c.drawString(2 * cm, y, f"Nombre: {user.nombres} {user.apellidos}")
+        y -= 0.6 * cm
+        c.drawString(2 * cm, y, f"DNI: {user.dni}")
+        y -= 0.6 * cm
+        c.drawString(2 * cm, y, f"Periodo académico: {periodo.semestre}")
+        y -= 0.6 * cm
+        c.drawString(2 * cm, y, f"Estado de matrícula: {matricula.estado.upper()}")
+        y -= 1 * cm
+
+        c.setFont("Helvetica-Bold", 11)
+        c.drawString(2 * cm, y, "Cursos matriculados")
+        y -= 0.8 * cm
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(2 * cm, y, "Curso")
+        c.drawString(10 * cm, y, "Sección")
+        c.drawString(14 * cm, y, "Estado")
+        y -= 0.3 * cm
+        c.line(2 * cm, y, width - 2 * cm, y)
+        y -= 0.5 * cm
+
+        c.setFont("Helvetica", 9)
+        for detalle in matricula.detalles:
+            seccion = detalle.seccion
+            c.drawString(2 * cm, y, seccion.curso.nombre[:45])
+            c.drawString(10 * cm, y, seccion.nombre)
+            c.drawString(14 * cm, y, detalle.estado_curso)
+            y -= 0.5 * cm
+
+        y -= 1 * cm
+        if matricula.validador:
+            c.setFont("Helvetica", 9)
+            c.drawString(
+                2 * cm,
+                y,
+                f"Validado por: {matricula.validador.nombres} {matricula.validador.apellidos}",
+            )
+
+        c.showPage()
+        c.save()
+        buffer.seek(0)
+        return buffer

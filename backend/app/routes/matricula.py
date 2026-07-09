@@ -1,4 +1,4 @@
-from flask import session
+from flask import session, send_file
 from flask_openapi3 import APIBlueprint, Tag
 from pydantic import BaseModel, Field
 from ..schemas.matricula_schema import (
@@ -132,3 +132,42 @@ def estadisticas():
         return {"error": "No autorizado"}, 401
 
     return MatriculaService.estadisticas(), 200
+
+
+@matricula_bp.get(
+    "/<int:matricula_id>/ficha",
+    responses={
+        "200": {"description": "Archivo PDF de la ficha de matrícula"},
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
+)
+def descargar_ficha(path: MatriculaPath):
+    """Descarga la ficha de matrícula en PDF. El estudiante solo puede descargar la suya."""
+    user = AuthService.get_current_user()
+    if not user:
+        return {"error": "No hay usuario autenticado"}, 401
+
+    matricula = MatriculaService.obtener_matricula(path.matricula_id)
+    if not matricula:
+        return {"error": "Matrícula no encontrada"}, 404
+
+    if user.rol == "estudiante":
+        estudiante = MatriculaService.obtener_estudiante_por_user_id(user.id)
+        if not estudiante or matricula.estudiante_id != estudiante.id:
+            return {"error": "No autorizado para descargar esta ficha"}, 401
+    elif user.rol not in ("administrador", "direccion"):
+        return {"error": "No autorizado"}, 401
+
+    try:
+        buffer = MatriculaService.generar_ficha_pdf(path.matricula_id)
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"ficha_matricula_{path.matricula_id}.pdf",
+    )
