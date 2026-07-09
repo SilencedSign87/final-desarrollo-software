@@ -20,6 +20,7 @@ import RegisterView from "./views/RegisterView"
 import CursosDocente from "./views/Docente/CursosDocente"
 import SeccionesDocente from "./views/Docente/SeccionesDocente"
 import NotasDocente from "./views/Docente/NotasDocente"
+import EstudianteMatricula from "./views/Estudiante/Matricula"
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             }
           >
             <Route path="dashboard" element={<EstudianteDashboard />} />
+            <Route path="matricula" element={<EstudianteMatricula />} />
             <Route path="documentos" element={<EstudianteDocumentos />} />
           </Route>
 

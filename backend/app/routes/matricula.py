@@ -25,18 +25,24 @@ class MatriculaQuery(BaseModel):
 
 
 def _to_response(matricula):
+    estudiante = matricula.estudiante
     return MatriculaResponse(
         id=matricula.id,
         periodo_academico_id=matricula.periodo_academico_id,
+        periodo_semestre=matricula.periodo_academico.semestre if matricula.periodo_academico else None,
         estudiante_id=matricula.estudiante_id,
+        estudiante_nombre=f"{estudiante.user.nombres} {estudiante.user.apellidos}" if estudiante and estudiante.user else None,
         estado=matricula.estado,
         observacion=matricula.observacion,
         comprobante_url=matricula.comprobante_url,
         validado_user_id=matricula.validado_user_id,
+        validador_nombre=f"{matricula.validador.nombres} {matricula.validador.apellidos}" if matricula.validador else None,
         detalles=[
             {
                 "id": d.id,
                 "seccion_id": d.seccion_id,
+                "seccion_nombre": d.seccion.nombre if d.seccion else None,
+                "curso_nombre": d.seccion.curso.nombre if d.seccion and d.seccion.curso else None,
                 "estado_curso": d.estado_curso,
             }
             for d in matricula.detalles

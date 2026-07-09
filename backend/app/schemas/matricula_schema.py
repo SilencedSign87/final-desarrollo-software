@@ -18,6 +18,8 @@ class MatriculaValidar(BaseModel):
 class DetalleMatriculaResponse(BaseModel):
     id: int
     seccion_id: int
+    seccion_nombre: Optional[str] = None
+    curso_nombre: Optional[str] = None
     estado_curso: str
 
 
@@ -25,11 +27,14 @@ class MatriculaResponse(BaseModel):
     """Schema de respuesta para una matrícula"""
     id: int
     periodo_academico_id: int
+    periodo_semestre: Optional[str] = None
     estudiante_id: int
+    estudiante_nombre: Optional[str] = None
     estado: str
     observacion: Optional[str] = None
     comprobante_url: Optional[str] = None
     validado_user_id: Optional[int] = None
+    validador_nombre: Optional[str] = None
     detalles: list[DetalleMatriculaResponse] = []
 
 
