@@ -106,9 +106,6 @@ export default function LoginView() {
                                     </form>
                                     <div className='mt-6 flex flex-col items-center justify-center'>
                                         <p className='mt-2 text-sm text-gray-500'>¿Olvidó su contraseña? <a href="/reset-password" className='text-blue-500 hover:underline'>Recupérela aquí</a></p>
-                                        <p className='mt-2 text-sm text-gray-500'>
-                                            No tiene cuenta? <a href="/register" className='text-blue-500 hover:underline'>Regístrese aquí</a>
-                                        </p>
                                     </div>
                                 </>
                     }

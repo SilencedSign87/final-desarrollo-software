@@ -11,6 +11,7 @@ from ..schemas.evaluacion_schema import (
     TipoEvaluacionResponse,
     TipoEvaluacionListResponse,
     EstudianteSimpleResponse,
+    NotasEstudianteListResponse,
 )
 from ..schemas.generic_schema import ErrorResponse
 from ..services.evaluacion_service import EvaluacionService, TipoEvaluacionService
@@ -53,13 +54,13 @@ def _to_response(evaluacion):
 
 
 @evaluaciones_bp.post(
-    "/",
+    "",
     responses={"201": EvaluacionResponse, "400": ErrorResponse, "401": ErrorResponse},
 )
 def crear_evaluacion(body: EvaluacionCreate):
     """Crear una evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -71,7 +72,7 @@ def crear_evaluacion(body: EvaluacionCreate):
 
 
 @evaluaciones_bp.get(
-    "/",
+    "",
     responses={"200": EvaluacionListResponse},
 )
 def listar_evaluaciones(query: EvaluacionQuery):
@@ -107,7 +108,7 @@ def obtener_evaluacion(path: EvaluacionPath):
 def actualizar_evaluacion(path: EvaluacionPath, body: EvaluacionUpdate):
     """Actualizar nota de una evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -143,7 +144,7 @@ def eliminar_evaluacion(path: EvaluacionPath):
 
 
 @evaluaciones_bp.post(
-    "/tipo-evaluaciones/",
+    "/tipo-evaluaciones",
     responses={
         "201": TipoEvaluacionResponse,
         "400": ErrorResponse,
@@ -153,7 +154,7 @@ def eliminar_evaluacion(path: EvaluacionPath):
 def crear_tipo_evaluacion(body: TipoEvaluacionCreate):
     """Crear un tipo de evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -198,7 +199,7 @@ def obtener_tipo_evaluacion(path: TipoEvaluacionPath):
 def actualizar_tipo_evaluacion(path: TipoEvaluacionPath, body: TipoEvaluacionUpdate):
     """Actualizar un tipo de evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -229,7 +230,7 @@ def actualizar_tipo_evaluacion(path: TipoEvaluacionPath, body: TipoEvaluacionUpd
 def eliminar_tipo_evaluacion(path: TipoEvaluacionPath):
     """Eliminar un tipo de evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     eliminado = TipoEvaluacionService.eliminar_tipo_evaluacion(path.tipo_evaluacion_id)
@@ -239,7 +240,7 @@ def eliminar_tipo_evaluacion(path: TipoEvaluacionPath):
 
 
 @evaluaciones_bp.get(
-    "/tipo-evaluaciones/",
+    "/tipo-evaluaciones",
     responses={"200": TipoEvaluacionListResponse},
 )
 def listar_tipos_evaluacion(query: TipoEvaluacionQuery):
@@ -283,6 +284,35 @@ class SeccionPath(BaseModel):
     seccion_id: int = Field(..., description="ID de la sección")
 
 
+class ValidarPromedioBody(BaseModel):
+    detalle_matricula_id: int = Field(
+        ..., description="ID del detalle de matrícula"
+    )
+
+
+@evaluaciones_bp.post(
+    "/seccion/<int:seccion_id>/validar-promedio",
+    responses={
+        "200": {"description": "Promedio validado y guardado"},
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
+)
+def validar_promedio(path: SeccionPath, body: ValidarPromedioBody):
+    """Calcular y guardar el promedio final de un estudiante"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "administrador":
+        return {"error": "No autorizado"}, 401
+
+    try:
+        promedio = EvaluacionService.validar_promedio(body.detalle_matricula_id)
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+    return {"promedio_final": promedio, "message": "Promedio validado correctamente"}, 200
+
+
 @evaluaciones_bp.get(
     "/seccion/<int:seccion_id>/notas",
     responses={"200": NotasSeccionResponse, "404": ErrorResponse},
@@ -297,3 +327,31 @@ def listar_notas_por_seccion(path: SeccionPath):
 
     resultados = EvaluacionService.listar_notas_por_seccion(path.seccion_id)
     return resultados, 200
+
+
+class NotasEstudianteQuery(BaseModel):
+    periodo_academico_id: int = Field(..., description="ID del periodo académico")
+
+
+@evaluaciones_bp.get(
+    "/estudiante/mis-notas",
+    responses={
+        "200": NotasEstudianteListResponse,
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
+)
+def listar_notas_estudiante(query: NotasEstudianteQuery):
+    """Listar notas del estudiante actual en un periodo académico"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "estudiante":
+        return {"error": "No autorizado"}, 401
+
+    estudiante = user.estudiante
+    if not estudiante:
+        return {"error": "Perfil de estudiante no encontrado"}, 404
+
+    notas = EvaluacionService.listar_notas_estudiante(
+        estudiante.id, query.periodo_academico_id
+    )
+    return notas, 200

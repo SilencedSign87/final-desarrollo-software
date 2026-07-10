@@ -7,7 +7,7 @@ import Dialog from "./Dialog";
 
 export default function LogoutButton({ className = '', iconClassName = '' }) {
     const navigate = useNavigate()
-    const { logout } = useAuth()
+    const { logout, isLoading } = useAuth()
 
     const handleLogout = () => {
         logout()
@@ -26,10 +26,12 @@ export default function LogoutButton({ className = '', iconClassName = '' }) {
                     <p>Está seguro que desea cerrar sesión?</p>
                 </Dialog.Content>
                 <Dialog.Footer>
-                    <button onClick={handleLogout} className="primary">
-                        Cerrar sesión
+                    <button onClick={handleLogout} className="primary" disabled={isLoading}>
+                        {
+                            isLoading ? 'Cerrando sesión...' : 'Cerrar sesión'
+                        }
                     </button>
-                    <Dialog.Trigger className="subtle">
+                    <Dialog.Trigger className="subtle" disabled={isLoading}>
                         Cancelar
                     </Dialog.Trigger>
                 </Dialog.Footer>

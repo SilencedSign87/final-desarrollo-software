@@ -10,7 +10,7 @@ export const EvaluacionService = {
         })
     },
     searchTipoEvaluaciones: async ({ seccion_id, nombre, evaluacion_id } = {}) => {
-        return apiClient.get("/evaluaciones/tipo-evaluaciones/", {
+        return apiClient.get("/evaluaciones/tipo-evaluaciones", {
             params: {
                 seccion_id,
                 nombre,
@@ -38,4 +38,18 @@ export const EvaluacionService = {
     actualizarEvaluacion: async ({ id, nota }) => {
         return apiClient.put(`/evaluaciones/${id}`, { nota })
     },
+    actualizarTipoEvaluacion: async ({ id, nombre, peso }) => {
+        return apiClient.put(`/evaluaciones/tipo-evaluaciones/${id}`, { nombre, peso })
+    },
+    eliminarTipoEvaluacion: async ({ id }) => {
+        return apiClient.delete(`/evaluaciones/tipo-evaluaciones/${id}`)
+    },
+    getMisNotas: async ({ periodo_academico_id }) => {
+        return apiClient.get(`/evaluaciones/estudiante/mis-notas`, { params: { periodo_academico_id } })
+    },
+    validarPromedio: async ({ seccion_id, detalle_matricula_id }) => {
+        return apiClient.post(`/evaluaciones/seccion/${seccion_id}/validar-promedio`, {
+            detalle_matricula_id
+        })
+    }
 }

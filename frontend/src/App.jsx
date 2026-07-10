@@ -23,6 +23,8 @@ import NotasDocente from "./views/Docente/NotasDocente"
 import EstudianteMatricula from "./views/Estudiante/Matricula"
 import AdministrativoMatricula from "./views/Administrativo/Matricula"
 import DireccionMatricula from "./views/Direccion/Matricula"
+import NotasEstudiante from "./views/Estudiante/NotasEstudiante"
+import NotasAdministrativo from "./views/Administrativo/NotasAdministrativo"
 
 function App() {
   return (
@@ -32,7 +34,6 @@ function App() {
           {/* Pública */}
           <Route path="/" element={<LoginView />} />
           <Route path="/login" element={<Navigate to="/" />} />
-          <Route path="/register" element={<RegisterView />} />
           {/* Redireccion Rol */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
           {/* Rutas protegidas */}
@@ -49,6 +50,7 @@ function App() {
             <Route path="dashboard" element={<EstudianteDashboard />} />
             <Route path="matricula" element={<EstudianteMatricula />} />
             <Route path="documentos" element={<EstudianteDocumentos />} />
+            <Route path="notas" element={<NotasEstudiante />} />
           </Route>
 
           {/* Docente */}
@@ -79,6 +81,7 @@ function App() {
             <Route path="matricula" element={<AdministrativoMatricula />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
             <Route path="seguridad" element={<AdministrativoSeguridad />} />
+            <Route path="notas" element={<NotasAdministrativo />} />
           </Route>
 
           {/* Director */}

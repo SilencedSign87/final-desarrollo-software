@@ -33,8 +33,10 @@ export function AuthProvider({ children }) {
     }
 
     const logout = async () => {
+        setIsLoading(true)
         await logoutRequest()
         setUser(null)
+        setIsLoading(false)
     }
 
     return (

@@ -37,21 +37,18 @@ def _to_response(pa):
     ).model_dump()
 
 
-# ── GET / ────────────────────────────────────────────────────────────────
-
-
 @periodo_academico_bp.get("", responses={"200": PeriodoAcademicoListResponse})
 def search_periodos_academicos(query: PeriodoAcademicoSearchRequest):
     """Buscar periodos académicos."""
 
     result = PeriodoAcademicoService.search(query)
 
-    return PeriodoAcademicoListResponse(
-        root=[_to_response(pa) for pa in result]
-    ).model_dump(), 200
-
-
-# ── GET /<id> ────────────────────────────────────────────────────────────
+    return (
+        PeriodoAcademicoListResponse(
+            root=[_to_response(pa) for pa in result]
+        ).model_dump(),
+        200,
+    )
 
 
 @periodo_academico_bp.get(
@@ -69,9 +66,6 @@ def get_periodo_academico(path: PeriodoAcademicoPath):
     return _to_response(periodo), 200
 
 
-# ── GET /<id>/cursos ─────────────────────────────────────────────────────
-
-
 @periodo_academico_bp.get(
     "/<int:periodo_id>/cursos",
     responses={"200": CursosPorPeriodoResponse, "404": ErrorResponse},
@@ -84,23 +78,23 @@ def get_cursos_by_periodo_academico(path: PeriodoAcademicoPath):
     if cursos is None:
         return {"message": "Periodo académico no encontrado"}, 404
 
-    return CursosPorPeriodoResponse(
-        root=[
-            CursoResponse(
-                id=curso.id,
-                plan_estudios_id=curso.plan_estudios_id,
-                nombre=curso.nombre,
-                horas_teoria=curso.horas_teoria,
-                horas_practica=curso.horas_practica,
-                semestre_num=curso.semestre_num,
-                prerequisitos_ids=[prereq.id for prereq in curso.prerequisitos],
-            )
-            for curso in cursos
-        ]
-    ).model_dump(), 200
-
-
-# ── POST / ───────────────────────────────────────────────────────────────
+    return (
+        CursosPorPeriodoResponse(
+            root=[
+                CursoResponse(
+                    id=curso.id,
+                    plan_estudios_id=curso.plan_estudios_id,
+                    nombre=curso.nombre,
+                    horas_teoria=curso.horas_teoria,
+                    horas_practica=curso.horas_practica,
+                    semestre_num=curso.semestre_num,
+                    prerequisitos_ids=[prereq.id for prereq in curso.prerequisitos],
+                )
+                for curso in cursos
+            ]
+        ).model_dump(),
+        200,
+    )
 
 
 @periodo_academico_bp.post(
@@ -118,43 +112,74 @@ def crear_periodo_academico(body: PeriodoAcademicoCreate):
     return _to_response(periodo), 201
 
 
-# ── PUT /<id> ────────────────────────────────────────────────────────────
-
-
 @periodo_academico_bp.put(
     "/<int:periodo_id>",
-    responses={"200": PeriodoAcademicoResponse, "401": ErrorResponse, "404": ErrorResponse},
+    responses={
+        "200": PeriodoAcademicoResponse,
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
 )
-def actualizar_periodo_academico(path: PeriodoAcademicoPath, body: PeriodoAcademicoUpdate):
+def actualizar_periodo_academico(
+    path: PeriodoAcademicoPath, body: PeriodoAcademicoUpdate
+):
     """Admin actualiza un periodo académico existente."""
 
     user = AuthService.get_current_user()
     if not user or user.rol != "administrador":
-        return {"message": "Solo un administrador puede editar periodos académicos"}, 401
+        return {
+            "message": "Solo un administrador puede editar periodos académicos"
+        }, 401
 
-    periodo = PeriodoAcademicoService.update(path.periodo_id, body.model_dump(exclude_unset=True))
+    periodo = PeriodoAcademicoService.update(
+        path.periodo_id, body.model_dump(exclude_unset=True)
+    )
     if not periodo:
         return {"message": "Periodo académico no encontrado"}, 404
 
     return _to_response(periodo), 200
 
 
-# ── DELETE /<id> ─────────────────────────────────────────────────────────
-
-
 @periodo_academico_bp.delete(
     "/<int:periodo_id>",
-    responses={"200": {"description": "Periodo académico eliminado"}, "401": ErrorResponse, "404": ErrorResponse},
+    responses={
+        "200": {"description": "Periodo académico eliminado"},
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
 )
 def eliminar_periodo_academico(path: PeriodoAcademicoPath):
     """Admin elimina un periodo académico."""
 
     user = AuthService.get_current_user()
     if not user or user.rol != "administrador":
-        return {"message": "Solo un administrador puede eliminar periodos académicos"}, 401
+        return {
+            "message": "Solo un administrador puede eliminar periodos académicos"
+        }, 401
 
     eliminado = PeriodoAcademicoService.delete(path.periodo_id)
     if not eliminado:
         return {"message": "Periodo académico no encontrado"}, 404
 
     return {"message": "Periodo académico eliminado correctamente"}, 200
+
+
+@periodo_academico_bp.get(
+    "/me", responses={"200": PeriodoAcademicoListResponse, "401": ErrorResponse}
+)
+def get_periodo_academico_estudiante_matriculado():
+    """Obtener los periodos académicos en los que el estudiante actual está matriculado."""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "estudiante":
+        return {
+            "message": "Solo un estudiante puede acceder a sus periodos académicos"
+        }, 401
+
+    periodos = PeriodoAcademicoService.get_periodos_academicos_estudiante(user.id)
+
+    return (
+        PeriodoAcademicoListResponse(
+            root=[_to_response(pa) for pa in periodos]
+        ).model_dump(),
+        200,
+    )
