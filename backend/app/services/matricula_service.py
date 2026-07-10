@@ -20,12 +20,40 @@ class MatriculaService:
         Valida que las secciones existan y tengan cupo disponible antes de confirmar.
         Lanza ValueError con un mensaje claro si algo no cumple.
         """
+        secciones_ids = list(dict.fromkeys(data["secciones_ids"]))
+
         secciones = Seccion.query.filter(
-            Seccion.id.in_(data["secciones_ids"])
+            Seccion.id.in_(secciones_ids)
         ).all()
 
-        if len(secciones) != len(data["secciones_ids"]):
+        if len(secciones) != len(secciones_ids):
             raise ValueError("Una o más secciones no existen")
+
+        matricula_existente = Matricula.query.filter(
+            Matricula.estudiante_id == estudiante_id,
+            Matricula.periodo_academico_id == data["periodo_academico_id"],
+            Matricula.estado.in_(["pendiente", "validada"]),
+        ).first()
+        if matricula_existente:
+            raise ValueError(
+                f"Ya existe una matrícula {matricula_existente.estado} para este "
+                f"periodo (id={matricula_existente.id}). No se puede crear otra."
+            )
+
+        for seccion in secciones:
+            if seccion.periodo_academico_id != data["periodo_academico_id"]:
+                raise ValueError(
+                    f"La sección '{seccion.nombre}' no pertenece al periodo académico indicado"
+                )
+
+        cursos_vistos = {}
+        for seccion in secciones:
+            if seccion.curso_id in cursos_vistos:
+                raise ValueError(
+                    f"Seleccionaste dos secciones del mismo curso "
+                    f"'{seccion.curso.nombre}' ({cursos_vistos[seccion.curso_id]} y {seccion.nombre})"
+                )
+            cursos_vistos[seccion.curso_id] = seccion.nombre
 
         semestre_actual, aprobados_ids = (
             CursoService.obtener_semestre_actual_y_aprobados(estudiante_id)

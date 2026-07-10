@@ -21,6 +21,7 @@ export default function EstudianteMatricula() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [confirmando, setConfirmando] = useState(false)
 
     const loadMatriculas = useCallback(async ({ showLoading = false } = {}) => {
         if (showLoading) {
@@ -78,6 +79,7 @@ export default function EstudianteMatricula() {
 
     const handleOpenDialog = async () => {
         setDialogOpen(true)
+        setConfirmando(false)
         setSeccionesSeleccionadas([])
         setComprobanteUrl('')
         setError(null)
@@ -112,6 +114,19 @@ export default function EstudianteMatricula() {
     const cursosDisponiblesIds = new Set(cursosDisponibles.map((c) => c.id))
     const seccionesFiltradas = secciones.filter((s) => cursosDisponiblesIds.has(s.curso_id))
 
+    const periodoActivo = periodos[0]
+    const matriculaBloqueante = periodoActivo
+        ? matriculas.find(
+              (m) =>
+                  m.periodo_academico_id === periodoActivo.id &&
+                  ['pendiente', 'validada'].includes(m.estado)
+          )
+        : null
+
+    const seccionesSeleccionadasInfo = seccionesFiltradas.filter((s) =>
+        seccionesSeleccionadas.includes(s.id)
+    )
+
     const handlePeriodoChange = async (event) => {
         const nuevoPeriodo = event.target.value
         setPeriodoId(nuevoPeriodo)
@@ -127,8 +142,13 @@ export default function EstudianteMatricula() {
         )
     }
 
-    const handleSubmit = async (event) => {
+    const handleRevisar = (event) => {
         event.preventDefault()
+        setError(null)
+        setConfirmando(true)
+    }
+
+    const handleConfirmar = async () => {
         setIsSubmitting(true)
         setError(null)
 
@@ -139,9 +159,11 @@ export default function EstudianteMatricula() {
                 secciones_ids: seccionesSeleccionadas,
             })
             setDialogOpen(false)
+            setConfirmando(false)
             await loadMatriculas({ showLoading: true })
         } catch (requestError) {
             setError(requestError.response?.data?.error ?? 'No se pudo crear la matrícula')
+            setConfirmando(false)
         } finally {
             setIsSubmitting(false)
         }
@@ -157,6 +179,14 @@ export default function EstudianteMatricula() {
                     </p>
                 </div>
 
+                {matriculaBloqueante ? (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+                        Ya tienes una matrícula <strong>{matriculaBloqueante.estado}</strong> para{' '}
+                        {periodoActivo?.semestre}. {matriculaBloqueante.estado === 'pendiente'
+                            ? 'Espera a que sea validada.'
+                            : 'No puedes solicitar otra en este periodo.'}
+                    </div>
+                ) : (
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                     <button
                         type="button"
@@ -167,9 +197,32 @@ export default function EstudianteMatricula() {
                         Solicitar matrícula
                     </button>
                     <Dialog.Surface>
-                        <Dialog.Header>Solicitar matrícula</Dialog.Header>
+                        <Dialog.Header>
+                            {confirmando ? 'Revisa tu solicitud' : 'Solicitar matrícula'}
+                        </Dialog.Header>
                         <Dialog.Content>
-                            <form id="matricula-form" className="space-y-4" onSubmit={handleSubmit}>
+                            {confirmando ? (
+                                <div className="space-y-3 text-sm">
+                                    <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                                        Verifica que los cursos y secciones sean correctos. Una vez
+                                        enviada, no podrás modificar ni volver a solicitar tu
+                                        matrícula mientras esté pendiente o validada.
+                                    </p>
+                                    <p><strong>Periodo:</strong> {periodoActivo?.semestre}</p>
+                                    <div>
+                                        <strong>Cursos a matricular:</strong>
+                                        <ul className="mt-1 list-disc space-y-1 pl-5">
+                                            {seccionesSeleccionadasInfo.map((s) => (
+                                                <li key={s.id}>
+                                                    {s.curso_nombre ?? cursosDisponibles.find((c) => c.id === s.curso_id)?.nombre} — Sección {s.nombre}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <p><strong>Comprobante:</strong> {comprobanteUrl}</p>
+                                </div>
+                            ) : (
+                            <form id="matricula-form" className="space-y-4" onSubmit={handleRevisar}>
                                 <label className="flex flex-col gap-2 text-sm">
                                     Periodo académico
                                     <select value={periodoId} onChange={handlePeriodoChange} required>
@@ -238,20 +291,45 @@ export default function EstudianteMatricula() {
                                     />
                                 </label>
                             </form>
+                            )}
                         </Dialog.Content>
                         <Dialog.Footer>
-                            <button
-                                type="submit"
-                                form="matricula-form"
-                                className="primary"
-                                disabled={isSubmitting || seccionesSeleccionadas.length === 0}
-                            >
-                                {isSubmitting ? 'Enviando...' : 'Enviar solicitud'}
-                            </button>
-                            <Dialog.Trigger className="subtle">Cancelar</Dialog.Trigger>
+                            {confirmando ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="primary"
+                                        disabled={isSubmitting}
+                                        onClick={handleConfirmar}
+                                    >
+                                        {isSubmitting ? 'Enviando...' : 'Confirmar y enviar'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="subtle"
+                                        disabled={isSubmitting}
+                                        onClick={() => setConfirmando(false)}
+                                    >
+                                        Volver a revisar
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        type="submit"
+                                        form="matricula-form"
+                                        className="primary"
+                                        disabled={seccionesSeleccionadas.length === 0}
+                                    >
+                                        Continuar
+                                    </button>
+                                    <Dialog.Trigger className="subtle">Cancelar</Dialog.Trigger>
+                                </>
+                            )}
                         </Dialog.Footer>
                     </Dialog.Surface>
                 </Dialog>
+                )}
             </div>
 
             {error && (

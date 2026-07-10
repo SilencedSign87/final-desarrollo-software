@@ -25,6 +25,10 @@ import AdministrativoMatricula from "./views/Administrativo/Matricula"
 import DireccionMatricula from "./views/Direccion/Matricula"
 import NotasEstudiante from "./views/Estudiante/NotasEstudiante"
 import NotasAdministrativo from "./views/Administrativo/NotasAdministrativo"
+import AdministrativoCursos from "./views/Administrativo/Cursos"
+import AdministrativoDocentes from "./views/Administrativo/Docentes"
+import AdministrativoSecciones from "./views/Administrativo/Secciones"
+import DireccionCargaDocente from "./views/Direccion/CargaDocente"
 
 function App() {
   return (
@@ -79,9 +83,11 @@ function App() {
           >
             <Route path="dashboard" element={<AdministrativoDashboard />} />
             <Route path="matricula" element={<AdministrativoMatricula />} />
+            <Route path="cursos" element={<AdministrativoCursos />} />
+            <Route path="docentes" element={<AdministrativoDocentes />} />
+            <Route path="secciones" element={<AdministrativoSecciones />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
             <Route path="seguridad" element={<AdministrativoSeguridad />} />
-            <Route path="notas" element={<NotasAdministrativo />} />
           </Route>
 
           {/* Director */}
@@ -95,6 +101,7 @@ function App() {
           >
             <Route path="dashboard" element={<DireccionDashboard />} />
             <Route path="matricula" element={<DireccionMatricula />} />
+            <Route path="carga-docente" element={<DireccionCargaDocente />} />
             <Route path="documentos" element={<DireccionDocumentos />} />
             <Route path="auditorias" element={<DireccionAuditorias />} />
           </Route>
