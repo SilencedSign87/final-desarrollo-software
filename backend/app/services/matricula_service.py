@@ -8,6 +8,7 @@ from ..models.matricula import Matricula
 from ..models.detalle_matricula import DetalleMatricula
 from ..models.seccion import Seccion
 from ..models.estudiante import Estudiante
+from ..services.curso_service import CursoService
 
 
 class MatriculaService:
@@ -25,6 +26,31 @@ class MatriculaService:
 
         if len(secciones) != len(data["secciones_ids"]):
             raise ValueError("Una o más secciones no existen")
+
+        semestre_actual, aprobados_ids = (
+            CursoService.obtener_semestre_actual_y_aprobados(estudiante_id)
+        )
+        for seccion in secciones:
+            curso = seccion.curso
+            if curso.semestre_num > semestre_actual:
+                raise ValueError(
+                    f"El curso '{curso.nombre}' pertenece al semestre "
+                    f"{curso.semestre_num}, pero el estudiante está en el "
+                    f"semestre {semestre_actual}"
+                )
+            if curso.id in aprobados_ids:
+                raise ValueError(
+                    f"El curso '{curso.nombre}' ya fue aprobado, no se puede "
+                    f"volver a matricular"
+                )
+            prereqs_faltantes = [
+                p.nombre for p in curso.prerequisitos if p.id not in aprobados_ids
+            ]
+            if prereqs_faltantes:
+                raise ValueError(
+                    f"No cumple los prerequisitos de '{curso.nombre}': "
+                    f"falta aprobar {', '.join(prereqs_faltantes)}"
+                )
 
         for seccion in secciones:
             ya_matriculados = DetalleMatricula.query.filter_by(

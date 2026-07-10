@@ -1,8 +1,61 @@
+from decimal import Decimal
+
 from ..extensions import db
 from ..models.curso import Curso
+from ..models.detalle_matricula import DetalleMatricula
+from ..models.matricula import Matricula
+from ..models.seccion import Seccion
+from ..models.estudiante import Estudiante
+
+NOTA_MINIMA_APROBATORIA = Decimal("10.5")
 
 
 class CursoService:
+
+    @staticmethod
+    def obtener_semestre_actual_y_aprobados(estudiante_id):
+        aprobados = (
+            db.session.query(Curso.id, Curso.semestre_num)
+            .join(Seccion, Seccion.curso_id == Curso.id)
+            .join(DetalleMatricula, DetalleMatricula.seccion_id == Seccion.id)
+            .join(Matricula, Matricula.id == DetalleMatricula.matricula_id)
+            .filter(
+                Matricula.estudiante_id == estudiante_id,
+                DetalleMatricula.promedio_final.isnot(None),
+                DetalleMatricula.promedio_final >= NOTA_MINIMA_APROBATORIA,
+            )
+            .all()
+        )
+
+        aprobados_ids = {curso_id for curso_id, _ in aprobados}
+        semestre_actual = max((sem for _, sem in aprobados), default=0) + 1
+        if semestre_actual < 1:
+            semestre_actual = 1
+
+        return semestre_actual, aprobados_ids
+
+    @staticmethod
+    def listar_disponibles_para_matricula(estudiante_id):
+        estudiante = Estudiante.query.get(estudiante_id)
+        if not estudiante:
+            raise ValueError("El estudiante no existe")
+
+        semestre_actual, aprobados_ids = (
+            CursoService.obtener_semestre_actual_y_aprobados(estudiante_id)
+        )
+
+        cursos_plan = Curso.query.filter_by(
+            plan_estudios_id=estudiante.plan_estudios_id,
+        ).all()
+
+        disponibles = [
+            curso
+            for curso in cursos_plan
+            if curso.id not in aprobados_ids
+            and curso.semestre_num <= semestre_actual
+            and all(p.id in aprobados_ids for p in curso.prerequisitos)
+        ]
+        return disponibles, semestre_actual
 
     @staticmethod
     def crear_curso(data):

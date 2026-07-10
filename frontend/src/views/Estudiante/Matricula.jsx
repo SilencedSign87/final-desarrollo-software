@@ -4,6 +4,7 @@ import MatriculasTable from '../../components/matricula/MatriculasTable'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
 import { createMatricula, getMisMatriculas } from '../../services/matriculaService'
+import { GetCursosDisponibles } from '../../services/cursos'
 import { PeriodoAcademicoService } from '../../services/periodoAcademicoService'
 import { SeccionService } from '../../services/seccionService'
 
@@ -11,6 +12,8 @@ export default function EstudianteMatricula() {
     const [matriculas, setMatriculas] = useState([])
     const [periodos, setPeriodos] = useState([])
     const [secciones, setSecciones] = useState([])
+    const [cursosDisponibles, setCursosDisponibles] = useState([])
+    const [semestreActual, setSemestreActual] = useState(null)
     const [periodoId, setPeriodoId] = useState('')
     const [comprobanteUrl, setComprobanteUrl] = useState('')
     const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState([])
@@ -77,6 +80,16 @@ export default function EstudianteMatricula() {
         setDialogOpen(true)
         setSeccionesSeleccionadas([])
         setComprobanteUrl('')
+        setError(null)
+
+        try {
+            const response = await GetCursosDisponibles()
+            setCursosDisponibles(response.data?.cursos ?? [])
+            setSemestreActual(response.data?.semestre_actual ?? null)
+        } catch (requestError) {
+            setCursosDisponibles([])
+            setError(requestError.response?.data?.error ?? 'No se pudieron cargar tus cursos disponibles')
+        }
 
         if (periodos[0]) {
             const primerPeriodo = periodos[0].id
@@ -93,6 +106,11 @@ export default function EstudianteMatricula() {
             setSecciones([])
         }
     }
+
+    // Solo se muestran secciones de cursos que le corresponden al estudiante
+    // (semestre actual o repitencia con prerequisitos cumplidos).
+    const cursosDisponiblesIds = new Set(cursosDisponibles.map((c) => c.id))
+    const seccionesFiltradas = secciones.filter((s) => cursosDisponiblesIds.has(s.curso_id))
 
     const handlePeriodoChange = async (event) => {
         const nuevoPeriodo = event.target.value
@@ -165,22 +183,47 @@ export default function EstudianteMatricula() {
                                 </label>
 
                                 <div className="flex flex-col gap-2 text-sm">
-                                    Secciones disponibles
-                                    {secciones.length ? (
-                                        <div className="space-y-1 rounded-md border border-neutral-300 p-3">
-                                            {secciones.map((seccion) => (
-                                                <label key={seccion.id} className="flex items-center gap-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={seccionesSeleccionadas.includes(seccion.id)}
-                                                        onChange={() => toggleSeccion(seccion.id)}
-                                                    />
-                                                    {seccion.nombre} — {seccion.cupos_ocupados}/{seccion.aforo} cupos ocupados
-                                                </label>
-                                            ))}
+                                    <div className="flex items-center justify-between">
+                                        <span>Cursos y secciones disponibles</span>
+                                        {semestreActual && (
+                                            <span className="text-xs text-neutral-500">
+                                                Semestre actual: {semestreActual}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {seccionesFiltradas.length ? (
+                                        <div className="space-y-3 rounded-md border border-neutral-300 p-3">
+                                            {cursosDisponibles.map((curso) => {
+                                                const seccionesDelCurso = seccionesFiltradas.filter(
+                                                    (s) => s.curso_id === curso.id
+                                                )
+                                                if (!seccionesDelCurso.length) return null
+                                                return (
+                                                    <div key={curso.id} className="space-y-1">
+                                                        <p className="text-xs font-semibold text-slate-700">
+                                                            {curso.nombre}{' '}
+                                                            <span className="font-normal text-neutral-500">
+                                                                (Semestre {curso.semestre_num})
+                                                            </span>
+                                                        </p>
+                                                        {seccionesDelCurso.map((seccion) => (
+                                                            <label key={seccion.id} className="flex items-center gap-2 pl-2">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={seccionesSeleccionadas.includes(seccion.id)}
+                                                                    onChange={() => toggleSeccion(seccion.id)}
+                                                                />
+                                                                {seccion.nombre} — {seccion.cupos_ocupados}/{seccion.aforo} cupos ocupados
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-neutral-500">No hay secciones disponibles para este periodo.</p>
+                                        <p className="text-xs text-neutral-500">
+                                            No hay secciones abiertas para los cursos que te corresponden en este periodo.
+                                        </p>
                                     )}
                                 </div>
 
