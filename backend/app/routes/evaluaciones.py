@@ -284,6 +284,35 @@ class SeccionPath(BaseModel):
     seccion_id: int = Field(..., description="ID de la sección")
 
 
+class ValidarPromedioBody(BaseModel):
+    detalle_matricula_id: int = Field(
+        ..., description="ID del detalle de matrícula"
+    )
+
+
+@evaluaciones_bp.post(
+    "/seccion/<int:seccion_id>/validar-promedio",
+    responses={
+        "200": {"description": "Promedio validado y guardado"},
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
+)
+def validar_promedio(path: SeccionPath, body: ValidarPromedioBody):
+    """Calcular y guardar el promedio final de un estudiante"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "administrador":
+        return {"error": "No autorizado"}, 401
+
+    try:
+        promedio = EvaluacionService.validar_promedio(body.detalle_matricula_id)
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+    return {"promedio_final": promedio, "message": "Promedio validado correctamente"}, 200
+
+
 @evaluaciones_bp.get(
     "/seccion/<int:seccion_id>/notas",
     responses={"200": NotasSeccionResponse, "404": ErrorResponse},

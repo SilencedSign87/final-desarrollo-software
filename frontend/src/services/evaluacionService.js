@@ -46,5 +46,10 @@ export const EvaluacionService = {
     },
     getMisNotas: async ({ periodo_academico_id }) => {
         return apiClient.get(`/evaluaciones/estudiante/mis-notas`, { params: { periodo_academico_id } })
+    },
+    validarPromedio: async ({ seccion_id, detalle_matricula_id }) => {
+        return apiClient.post(`/evaluaciones/seccion/${seccion_id}/validar-promedio`, {
+            detalle_matricula_id
+        })
     }
 }

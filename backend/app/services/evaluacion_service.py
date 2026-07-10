@@ -135,6 +135,36 @@ class EvaluacionService:
         return detalle.matricula.estudiante
 
     @staticmethod
+    def validar_promedio(detalle_matricula_id):
+        detalle = DetalleMatricula.query.get(detalle_matricula_id)
+        if not detalle:
+            raise ValueError("El detalle de matrícula no existe")
+
+        tipos = TipoEvaluacion.query.filter_by(seccion_id=detalle.seccion_id).all()
+        evaluaciones = Evaluacion.query.filter_by(
+            detalle_matricula_id=detalle_matricula_id
+        ).all()
+
+        eval_map = {e.tipo_evaluacion_id: e for e in evaluaciones}
+
+        suma_ponderada = Decimal("0")
+        suma_pesos = Decimal("0")
+        for t in tipos:
+            e = eval_map.get(t.id)
+            if e and e.nota is not None:
+                suma_ponderada += e.nota * t.peso
+                suma_pesos += t.peso
+
+        if suma_pesos > 0:
+            promedio = (suma_ponderada / suma_pesos).quantize(Decimal("0.00"))
+        else:
+            promedio = None
+
+        detalle.promedio_final = promedio
+        db.session.commit()
+        return float(promedio) if promedio else None
+
+    @staticmethod
     def listar_notas_por_seccion(seccion_id):
         from ..models import Matricula, Estudiante, User
 
