@@ -24,6 +24,7 @@ import EstudianteMatricula from "./views/Estudiante/Matricula"
 import AdministrativoMatricula from "./views/Administrativo/Matricula"
 import DireccionMatricula from "./views/Direccion/Matricula"
 import NotasEstudiante from "./views/Estudiante/NotasEstudiante"
+import NotasAdministrativo from "./views/Administrativo/NotasAdministrativo"
 
 function App() {
   return (
@@ -80,6 +81,7 @@ function App() {
             <Route path="matricula" element={<AdministrativoMatricula />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
             <Route path="seguridad" element={<AdministrativoSeguridad />} />
+            <Route path="notas" element={<NotasAdministrativo />} />
           </Route>
 
           {/* Director */}
