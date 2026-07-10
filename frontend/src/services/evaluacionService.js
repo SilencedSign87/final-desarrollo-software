@@ -44,4 +44,7 @@ export const EvaluacionService = {
     eliminarTipoEvaluacion: async ({ id }) => {
         return apiClient.delete(`/evaluaciones/tipo-evaluaciones/${id}`)
     },
+    getMisNotas: async ({ periodo_academico_id }) => {
+        return apiClient.get(`/evaluaciones/estudiante/mis-notas`, { params: { periodo_academico_id } })
+    }
 }

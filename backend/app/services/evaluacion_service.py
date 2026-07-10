@@ -1,9 +1,14 @@
 from decimal import Decimal
+
 from ..extensions import db
 from ..models.evaluacion import Evaluacion
 from ..models.tipo_evaluacion import TipoEvaluacion
+from ..models.matricula import Matricula
 from ..models.detalle_matricula import DetalleMatricula
 from ..models.seccion import Seccion
+from ..models.curso import Curso
+from ..models.estudiante import Estudiante
+from ..models.periodo_academico import PeriodoAcademico
 
 
 class TipoEvaluacionService:
@@ -44,10 +49,10 @@ class TipoEvaluacionService:
         tipo = TipoEvaluacion.query.get(tipo_evaluacion_id)
         if not tipo:
             return False
-        
+
         # Eliminar todas las notas
         Evaluacion.query.filter_by(tipo_evaluacion_id=tipo_evaluacion_id).delete()
-        
+
         db.session.delete(tipo)
         db.session.commit()
         return True
@@ -128,7 +133,7 @@ class EvaluacionService:
         if not detalle:
             return None
         return detalle.matricula.estudiante
-    
+
     @staticmethod
     def listar_notas_por_seccion(seccion_id):
         from ..models import Matricula, Estudiante, User
@@ -165,8 +170,7 @@ class EvaluacionService:
         ).all()
 
         eval_map: dict[tuple[int, int], Evaluacion] = {
-            (e.detalle_matricula_id, e.tipo_evaluacion_id): e
-            for e in evaluaciones
+            (e.detalle_matricula_id, e.tipo_evaluacion_id): e for e in evaluaciones
         }
 
         estudiantes = []
@@ -178,33 +182,90 @@ class EvaluacionService:
             for t in tipos:
                 e = eval_map.get((detalle_id, t.id))
                 nota_valor = e.nota if e else None
-                notas.append({
-                    "tipo_evaluacion_id": t.id,
-                    "evaluacion_id": e.id if e else None,
-                    "nota": nota_valor,
-                })
+                notas.append(
+                    {
+                        "tipo_evaluacion_id": t.id,
+                        "evaluacion_id": e.id if e else None,
+                        "nota": nota_valor,
+                    }
+                )
                 if nota_valor is not None:
                     suma_ponderada += nota_valor * t.peso
                     suma_pesos += t.peso
 
             promedio_calculado = (
                 (suma_ponderada / suma_pesos).quantize(Decimal("0.00"))
-                if suma_pesos > 0 else None
+                if suma_pesos > 0
+                else None
             )
 
-            estudiantes.append({
-                "detalle_matricula_id": detalle_id,
-                "estudiante_id": est_id,
-                "estudiante_nombre": f"{nombres} {apellidos}",
-                "notas": notas,
-                "promedio_final": promedio or promedio_calculado,
-            })
+            estudiantes.append(
+                {
+                    "detalle_matricula_id": detalle_id,
+                    "estudiante_id": est_id,
+                    "estudiante_nombre": f"{nombres} {apellidos}",
+                    "notas": notas,
+                    "promedio_final": promedio or promedio_calculado,
+                }
+            )
 
         return {
             "tipos_evaluacion": [
-                {"id": t.id, "seccion_id": t.seccion_id, "nombre": t.nombre, "peso": t.peso}
+                {
+                    "id": t.id,
+                    "seccion_id": t.seccion_id,
+                    "nombre": t.nombre,
+                    "peso": t.peso,
+                }
                 for t in tipos
             ],
             "estudiantes": estudiantes,
         }
 
+    @staticmethod
+    def listar_notas_estudiante(id_estudiante, periodo_academico_id):
+    
+        matricula = Matricula.query.filter_by(
+            estudiante_id=id_estudiante, periodo_academico_id=periodo_academico_id
+        ).first()
+
+        if not matricula:
+            return []
+
+        detalles = (
+            db.session.query(DetalleMatricula, Seccion, Curso)
+            .join(Seccion, Seccion.id == DetalleMatricula.seccion_id)
+            .join(Curso, Curso.id == Seccion.curso_id)
+            .filter(DetalleMatricula.matricula_id == matricula.id)
+            .all()
+        )
+        result = []
+        for detalle, seccion, curso in detalles:
+            tipos = TipoEvaluacion.query.filter_by(seccion_id=seccion.id).all()
+            evaluaciones = Evaluacion.query.filter_by(detalle_matricula_id=detalle.id).all()
+
+            eval_map = {e.tipo_evaluacion_id: e for e in evaluaciones}
+
+            evaluaciones_list = [
+                {
+                    "nombre": t.nombre,
+                    "nota": (
+                        float(eval_map[t.id].nota) if t.id in eval_map else Decimal("0")
+                    ),
+                    "peso": float(t.peso),
+                }
+                for t in tipos
+            ]
+
+            result.append(
+                {
+                    "curso": curso.nombre,
+                    "seccion": seccion.nombre,
+                    "promedio": (
+                        float(detalle.promedio_final) if detalle.promedio_final else None
+                    ),
+                    "evaluaciones": evaluaciones_list,
+                }
+            )
+
+        return result

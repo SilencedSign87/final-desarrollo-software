@@ -11,6 +11,7 @@ from ..schemas.evaluacion_schema import (
     TipoEvaluacionResponse,
     TipoEvaluacionListResponse,
     EstudianteSimpleResponse,
+    NotasEstudianteListResponse,
 )
 from ..schemas.generic_schema import ErrorResponse
 from ..services.evaluacion_service import EvaluacionService, TipoEvaluacionService
@@ -68,6 +69,7 @@ def crear_evaluacion(body: EvaluacionCreate):
         return {"error": str(e)}, 400
 
     return _to_response(evaluacion), 201
+
 
 @evaluaciones_bp.get(
     "",
@@ -281,6 +283,7 @@ def obtener_estudiante_de_evaluacion(path: EvaluacionPath):
 class SeccionPath(BaseModel):
     seccion_id: int = Field(..., description="ID de la sección")
 
+
 @evaluaciones_bp.get(
     "/seccion/<int:seccion_id>/notas",
     responses={"200": NotasSeccionResponse, "404": ErrorResponse},
@@ -295,3 +298,31 @@ def listar_notas_por_seccion(path: SeccionPath):
 
     resultados = EvaluacionService.listar_notas_por_seccion(path.seccion_id)
     return resultados, 200
+
+
+class NotasEstudianteQuery(BaseModel):
+    periodo_academico_id: int = Field(..., description="ID del periodo académico")
+
+
+@evaluaciones_bp.get(
+    "/estudiante/mis-notas",
+    responses={
+        "200": NotasEstudianteListResponse,
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
+)
+def listar_notas_estudiante(query: NotasEstudianteQuery):
+    """Listar notas del estudiante actual en un periodo académico"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "estudiante":
+        return {"error": "No autorizado"}, 401
+
+    estudiante = user.estudiante
+    if not estudiante:
+        return {"error": "Perfil de estudiante no encontrado"}, 404
+
+    notas = EvaluacionService.listar_notas_estudiante(
+        estudiante.id, query.periodo_academico_id
+    )
+    return notas, 200

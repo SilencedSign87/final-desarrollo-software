@@ -1,7 +1,9 @@
 from ..extensions import db
 from ..models.periodo_academico import PeriodoAcademico
 from ..models.seccion import Seccion
+from ..models.estudiante import Estudiante
 from ..models.curso import Curso
+from ..models.matricula import Matricula
 
 
 class PeriodoAcademicoService:
@@ -64,3 +66,13 @@ class PeriodoAcademicoService:
             .all()
         )
         return cursos
+    
+    def get_periodos_academicos_estudiante(estudiante_user_id):
+        estudiante = Estudiante.query.filter_by(user_id=estudiante_user_id).first()
+        
+        if not estudiante:
+            return None
+        
+        periodos_matriculados = PeriodoAcademico.query.join(Matricula).filter(Matricula.estudiante_id == estudiante.id).all()
+        
+        return periodos_matriculados
