@@ -87,6 +87,24 @@ def listar_matriculas(query: MatriculaQuery):
 
 
 @matricula_bp.get(
+    "/mias",
+    responses={"200": MatriculaListResponse, "400": ErrorResponse, "401": ErrorResponse},
+)
+def mis_matriculas():
+    """El estudiante autenticado ve únicamente sus propias matrículas"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "estudiante":
+        return {"error": "Solo un estudiante puede consultar sus propias matrículas"}, 401
+
+    estudiante = MatriculaService.obtener_estudiante_por_user_id(user.id)
+    if not estudiante:
+        return {"error": "No se encontró el perfil de estudiante asociado"}, 400
+
+    matriculas = MatriculaService.listar_matriculas_por_estudiante(estudiante.id)
+    return [_to_response(m) for m in matriculas], 200
+
+
+@matricula_bp.get(
     "/<int:matricula_id>",
     responses={"200": MatriculaResponse, "401": ErrorResponse, "404": ErrorResponse},
 )

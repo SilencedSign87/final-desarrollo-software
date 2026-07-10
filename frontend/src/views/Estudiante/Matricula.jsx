@@ -3,7 +3,7 @@ import { ClipboardList, Plus } from 'lucide-react'
 import MatriculasTable from '../../components/matricula/MatriculasTable'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
-import { createMatricula, getMatriculas } from '../../services/matriculaService'
+import { createMatricula, getMisMatriculas } from '../../services/matriculaService'
 import { PeriodoAcademicoService } from '../../services/periodoAcademicoService'
 import { SeccionService } from '../../services/seccionService'
 
@@ -25,7 +25,7 @@ export default function EstudianteMatricula() {
         }
         setError(null)
         try {
-            const response = await getMatriculas()
+            const response = await getMisMatriculas()
             setMatriculas(response.data ?? [])
         } catch (requestError) {
             setError(requestError.response?.data?.error ?? 'No se pudieron cargar tus matrículas')
@@ -39,7 +39,7 @@ export default function EstudianteMatricula() {
     useEffect(() => {
         let active = true
 
-        getMatriculas()
+        getMisMatriculas()
             .then((response) => {
                 if (active) {
                     setMatriculas(response.data ?? [])

@@ -4,6 +4,10 @@ export const getMatriculas = async (estado) => {
     return apiClient.get('/matriculas/', { params: { estado } })
 }
 
+export const getMisMatriculas = async () => {
+    return apiClient.get('/matriculas/mias')
+}
+
 export const getMatricula = async (matriculaId) => {
     return apiClient.get(`/matriculas/${matriculaId}`)
 }

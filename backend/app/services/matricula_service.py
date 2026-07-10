@@ -63,6 +63,11 @@ class MatriculaService:
         return query.all()
 
     @staticmethod
+    def listar_matriculas_por_estudiante(estudiante_id):
+        """Lista únicamente las matrículas del estudiante indicado (para su propia vista)"""
+        return Matricula.query.filter_by(estudiante_id=estudiante_id).all()
+
+    @staticmethod
     def obtener_matricula(matricula_id):
         return Matricula.query.get(matricula_id)
 
