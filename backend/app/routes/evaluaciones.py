@@ -53,13 +53,13 @@ def _to_response(evaluacion):
 
 
 @evaluaciones_bp.post(
-    "/",
+    "",
     responses={"201": EvaluacionResponse, "400": ErrorResponse, "401": ErrorResponse},
 )
 def crear_evaluacion(body: EvaluacionCreate):
     """Crear una evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -69,9 +69,8 @@ def crear_evaluacion(body: EvaluacionCreate):
 
     return _to_response(evaluacion), 201
 
-
 @evaluaciones_bp.get(
-    "/",
+    "",
     responses={"200": EvaluacionListResponse},
 )
 def listar_evaluaciones(query: EvaluacionQuery):
@@ -107,7 +106,7 @@ def obtener_evaluacion(path: EvaluacionPath):
 def actualizar_evaluacion(path: EvaluacionPath, body: EvaluacionUpdate):
     """Actualizar nota de una evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -143,7 +142,7 @@ def eliminar_evaluacion(path: EvaluacionPath):
 
 
 @evaluaciones_bp.post(
-    "/tipo-evaluaciones/",
+    "/tipo-evaluaciones",
     responses={
         "201": TipoEvaluacionResponse,
         "400": ErrorResponse,
@@ -153,7 +152,7 @@ def eliminar_evaluacion(path: EvaluacionPath):
 def crear_tipo_evaluacion(body: TipoEvaluacionCreate):
     """Crear un tipo de evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -198,7 +197,7 @@ def obtener_tipo_evaluacion(path: TipoEvaluacionPath):
 def actualizar_tipo_evaluacion(path: TipoEvaluacionPath, body: TipoEvaluacionUpdate):
     """Actualizar un tipo de evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     try:
@@ -229,7 +228,7 @@ def actualizar_tipo_evaluacion(path: TipoEvaluacionPath, body: TipoEvaluacionUpd
 def eliminar_tipo_evaluacion(path: TipoEvaluacionPath):
     """Eliminar un tipo de evaluación"""
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol != "administrador" and user.rol != "docente":
         return {"error": "No autorizado"}, 401
 
     eliminado = TipoEvaluacionService.eliminar_tipo_evaluacion(path.tipo_evaluacion_id)
@@ -239,7 +238,7 @@ def eliminar_tipo_evaluacion(path: TipoEvaluacionPath):
 
 
 @evaluaciones_bp.get(
-    "/tipo-evaluaciones/",
+    "/tipo-evaluaciones",
     responses={"200": TipoEvaluacionListResponse},
 )
 def listar_tipos_evaluacion(query: TipoEvaluacionQuery):
@@ -281,7 +280,6 @@ def obtener_estudiante_de_evaluacion(path: EvaluacionPath):
 
 class SeccionPath(BaseModel):
     seccion_id: int = Field(..., description="ID de la sección")
-
 
 @evaluaciones_bp.get(
     "/seccion/<int:seccion_id>/notas",

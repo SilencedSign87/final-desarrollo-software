@@ -1,5 +1,4 @@
-from marshmallow.fields import Decimal
-
+from decimal import Decimal
 from ..extensions import db
 from ..models.evaluacion import Evaluacion
 from ..models.tipo_evaluacion import TipoEvaluacion
@@ -45,6 +44,10 @@ class TipoEvaluacionService:
         tipo = TipoEvaluacion.query.get(tipo_evaluacion_id)
         if not tipo:
             return False
+        
+        # Eliminar todas las notas
+        Evaluacion.query.filter_by(tipo_evaluacion_id=tipo_evaluacion_id).delete()
+        
         db.session.delete(tipo)
         db.session.commit()
         return True
@@ -132,8 +135,9 @@ class EvaluacionService:
 
         # Tipos de evaluación de la sección
         tipos = TipoEvaluacion.query.filter_by(seccion_id=seccion_id).all()
-        if not tipos:
-            return {"tipos_evaluacion": [], "estudiantes": []}
+
+        # if not tipos:
+        #     return {"tipos_evaluacion": [], "estudiantes": []}
 
         # Detalles de matrícula de la sección con datos del estudiante
         detalles = (

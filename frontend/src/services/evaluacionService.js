@@ -10,7 +10,7 @@ export const EvaluacionService = {
         })
     },
     searchTipoEvaluaciones: async ({ seccion_id, nombre, evaluacion_id } = {}) => {
-        return apiClient.get("/evaluaciones/tipo-evaluaciones/", {
+        return apiClient.get("/evaluaciones/tipo-evaluaciones", {
             params: {
                 seccion_id,
                 nombre,
@@ -37,5 +37,11 @@ export const EvaluacionService = {
     },
     actualizarEvaluacion: async ({ id, nota }) => {
         return apiClient.put(`/evaluaciones/${id}`, { nota })
+    },
+    actualizarTipoEvaluacion: async ({ id, nombre, peso }) => {
+        return apiClient.put(`/evaluaciones/tipo-evaluaciones/${id}`, { nombre, peso })
+    },
+    eliminarTipoEvaluacion: async ({ id }) => {
+        return apiClient.delete(`/evaluaciones/tipo-evaluaciones/${id}`)
     },
 }
