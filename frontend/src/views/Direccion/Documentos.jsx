@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
+import TipoDocumentoPagoConfig from '../../components/documents/TipoDocumentoPagoConfig'
 import Spinner from '../../components/spinner'
 import { authorizeDocumentRequest, getDocumentRequests } from '../../services/documentsService'
 
@@ -75,6 +76,8 @@ export default function DireccionDocumentos() {
                 </p>
             </div>
 
+            <TipoDocumentoPagoConfig />
+
             {error && (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {error}
@@ -89,6 +92,7 @@ export default function DireccionDocumentos() {
                 <DocumentRequestsTable
                     requests={requests}
                     emptyMessage="No hay solicitudes pendientes de revisión."
+                    showComprobante
                     actions={(request) =>
                         request.estado === 'pendiente_autorizacion' ? (
                             <div className="flex flex-wrap gap-2">

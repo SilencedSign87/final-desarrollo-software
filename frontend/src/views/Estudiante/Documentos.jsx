@@ -1,23 +1,26 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FileText, Plus } from 'lucide-react'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
 import { createDocumentRequest, getDocumentRequests } from '../../services/documentsService'
-
-const DOCUMENT_TYPES = [
-    'Constancia de estudios',
-    'Certificado de notas',
-    'Constancia de matrícula',
-]
+import { getTiposDocumento } from '../../services/tipoDocumentoService'
 
 export default function EstudianteDocumentos() {
     const [requests, setRequests] = useState([])
-    const [tipoDocumento, setTipoDocumento] = useState(DOCUMENT_TYPES[0])
+    const [tipos, setTipos] = useState([])
+    const [tipoDocumentoId, setTipoDocumentoId] = useState('')
+    const [comprobante, setComprobante] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
     const [dialogOpen, setDialogOpen] = useState(false)
+
+    const tipoSeleccionado = useMemo(
+        () => tipos.find((tipo) => String(tipo.id) === String(tipoDocumentoId)),
+        [tipos, tipoDocumentoId]
+    )
+    const requierePago = Boolean(tipoSeleccionado?.requiere_pago)
 
     const loadRequests = useCallback(async ({ showLoading = false } = {}) => {
         if (showLoading) {
@@ -56,18 +59,51 @@ export default function EstudianteDocumentos() {
                 }
             })
 
+        getTiposDocumento()
+            .then((response) => {
+                if (active) {
+                    const data = response.data ?? []
+                    setTipos(data)
+                    if (data[0]) {
+                        setTipoDocumentoId(String(data[0].id))
+                    }
+                }
+            })
+            .catch(() => {
+                if (active) {
+                    setTipos([])
+                }
+            })
+
         return () => {
             active = false
         }
     }, [])
+
+    const handleOpenDialog = () => {
+        setDialogOpen(true)
+        setComprobante(null)
+        if (tipos[0]) {
+            setTipoDocumentoId(String(tipos[0].id))
+        }
+    }
 
     const handleSubmit = async (event) => {
         event.preventDefault()
         setIsSubmitting(true)
         setError(null)
 
+        if (requierePago && !comprobante) {
+            setError('Debes adjuntar el comprobante de pago para este documento')
+            setIsSubmitting(false)
+            return
+        }
+
         try {
-            await createDocumentRequest({ tipo_documento: tipoDocumento })
+            await createDocumentRequest({
+                tipo_documento_id: Number(tipoDocumentoId),
+                comprobante,
+            })
             setDialogOpen(false)
             await loadRequests({ showLoading: true })
         } catch (requestError) {
@@ -88,10 +124,14 @@ export default function EstudianteDocumentos() {
                 </div>
 
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <Dialog.Trigger className="primary inline-flex items-center gap-2">
+                    <button
+                        type="button"
+                        className="primary inline-flex items-center gap-2"
+                        onClick={handleOpenDialog}
+                    >
                         <Plus className="h-4 w-4" />
                         Nueva solicitud
-                    </Dialog.Trigger>
+                    </button>
                     <Dialog.Surface>
                         <Dialog.Header>Solicitar documento</Dialog.Header>
                         <Dialog.Content>
@@ -99,16 +139,35 @@ export default function EstudianteDocumentos() {
                                 <label className="flex flex-col gap-2 text-sm">
                                     Tipo de documento
                                     <select
-                                        value={tipoDocumento}
-                                        onChange={(event) => setTipoDocumento(event.target.value)}
+                                        value={tipoDocumentoId}
+                                        onChange={(event) => {
+                                            setTipoDocumentoId(event.target.value)
+                                            setComprobante(null)
+                                        }}
+                                        required
                                     >
-                                        {DOCUMENT_TYPES.map((type) => (
-                                            <option key={type} value={type}>
-                                                {type}
+                                        <option value="" disabled>Selecciona un tipo</option>
+                                        {tipos.map((tipo) => (
+                                            <option key={tipo.id} value={tipo.id}>
+                                                {tipo.nombre}
+                                                {tipo.requiere_pago ? ' (requiere pago)' : ''}
                                             </option>
                                         ))}
                                     </select>
                                 </label>
+
+                                {requierePago && (
+                                    <label className="flex flex-col gap-2 text-sm">
+                                        Comprobante de pago (PDF o imagen)
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                                            onChange={(event) => setComprobante(event.target.files?.[0] ?? null)}
+                                            required
+                                        />
+                                        <span className="text-xs text-neutral-500">Máximo 5 MB</span>
+                                    </label>
+                                )}
                             </form>
                         </Dialog.Content>
                         <Dialog.Footer>
@@ -116,7 +175,7 @@ export default function EstudianteDocumentos() {
                                 type="submit"
                                 form="document-request-form"
                                 className="primary"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !tipoDocumentoId}
                             >
                                 {isSubmitting ? 'Enviando...' : 'Enviar solicitud'}
                             </button>
@@ -147,6 +206,7 @@ export default function EstudianteDocumentos() {
                         requests={requests}
                         emptyMessage="Aún no has solicitado documentos."
                         showDownload
+                        showComprobante
                     />
                 )}
             </div>

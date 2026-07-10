@@ -4,8 +4,18 @@ export const getDocumentRequests = async () => {
     return apiClient.get('/documentos/solicitudes')
 }
 
-export const createDocumentRequest = async (data) => {
-    return apiClient.post('/documentos/solicitudes', data)
+export const createDocumentRequest = async ({ tipo_documento_id, tipo_documento, comprobante }) => {
+    const formData = new FormData()
+    if (tipo_documento_id != null) {
+        formData.append('tipo_documento_id', String(tipo_documento_id))
+    }
+    if (tipo_documento) {
+        formData.append('tipo_documento', tipo_documento)
+    }
+    if (comprobante) {
+        formData.append('comprobante', comprobante)
+    }
+    return apiClient.post('/documentos/solicitudes', formData)
 }
 
 export const authorizeDocumentRequest = async (requestId, data) => {
@@ -18,6 +28,10 @@ export const issueDocument = async (requestId) => {
 
 export const getDocumentDownloadUrl = (requestId) => {
     return `/api/documentos/solicitudes/${requestId}/archivo`
+}
+
+export const getDocumentComprobanteUrl = (requestId) => {
+    return `/api/documentos/solicitudes/${requestId}/comprobante`
 }
 
 export const verifyDocument = async (qrHash) => {

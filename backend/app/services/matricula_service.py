@@ -8,17 +8,22 @@ from ..models.matricula import Matricula
 from ..models.detalle_matricula import DetalleMatricula
 from ..models.seccion import Seccion
 from ..models.estudiante import Estudiante
+from ..models.periodo_academico import PeriodoAcademico
+from .file_service import FileService
 
 
 class MatriculaService:
 
     @staticmethod
-    def crear_matricula(estudiante_id, data):
+    def crear_matricula(estudiante_id, data, comprobante_file=None):
         """
         Crea una matrícula en estado 'pendiente' junto con sus detalles.
-        Valida que las secciones existan y tengan cupo disponible antes de confirmar.
-        Lanza ValueError con un mensaje claro si algo no cumple.
+        Si el periodo requiere pago, exige comprobante (archivo o URL).
         """
+        periodo = PeriodoAcademico.query.get(data["periodo_academico_id"])
+        if not periodo:
+            raise ValueError("El periodo académico no existe")
+
         secciones = Seccion.query.filter(
             Seccion.id.in_(data["secciones_ids"])
         ).all()
@@ -27,6 +32,10 @@ class MatriculaService:
             raise ValueError("Una o más secciones no existen")
 
         for seccion in secciones:
+            if seccion.periodo_academico_id != periodo.id:
+                raise ValueError(
+                    f"La sección '{seccion.nombre}' no pertenece al periodo seleccionado"
+                )
             ya_matriculados = DetalleMatricula.query.filter_by(
                 seccion_id=seccion.id
             ).count()
@@ -35,11 +44,24 @@ class MatriculaService:
                     f"La sección '{seccion.nombre}' ya no tiene cupos disponibles"
                 )
 
+        comprobante_url = data.get("comprobante_url")
+        tiene_archivo = comprobante_file is not None and getattr(
+            comprobante_file, "filename", None
+        )
+
+        if periodo.requiere_pago and not tiene_archivo and not comprobante_url:
+            raise ValueError(
+                "Este periodo requiere comprobante de pago. Adjunta el archivo."
+            )
+
+        if tiene_archivo:
+            FileService.validate_comprobante(comprobante_file)
+
         matricula = Matricula(
-            periodo_academico_id=data["periodo_academico_id"],
+            periodo_academico_id=periodo.id,
             estudiante_id=estudiante_id,
             estado="pendiente",
-            comprobante_url=data["comprobante_url"],
+            comprobante_url=comprobante_url,
         )
         db.session.add(matricula)
         db.session.flush()
@@ -51,6 +73,12 @@ class MatriculaService:
                 estado_curso="matriculado",
             )
             db.session.add(detalle)
+
+        if tiene_archivo:
+            stored = FileService.save_comprobante(
+                comprobante_file, f"matricula-{matricula.id}"
+            )
+            matricula.comprobante_url = stored
 
         db.session.commit()
         return matricula

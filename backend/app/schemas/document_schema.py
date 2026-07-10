@@ -11,9 +11,10 @@ class SolicitudDocumentoPath(BaseModel):
 
 
 class SolicitudDocumentoCreate(BaseModel):
-    """Schema para solicitar certificados o constancias."""
+    """Schema para solicitar certificados o constancias (JSON sin archivo)."""
 
-    tipo_documento: str = Field(..., min_length=3, max_length=100)
+    tipo_documento_id: Optional[int] = Field(None, description="ID del tipo de documento")
+    tipo_documento: Optional[str] = Field(None, min_length=3, max_length=100)
 
 
 class DocumentoEmitir(BaseModel):
@@ -53,8 +54,11 @@ class SolicitudDocumentoResponse(BaseModel):
 
     id: int
     estudiante_id: int
+    tipo_documento_id: Optional[int] = None
     tipo_documento: str
     estado: str
     qr_hash: Optional[str] = None
     archivo_url: Optional[str] = None
+    comprobante_url: Optional[str] = None
+    requiere_pago: bool = False
     fecha_creacion: datetime

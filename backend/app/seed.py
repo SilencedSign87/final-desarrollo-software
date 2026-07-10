@@ -12,6 +12,7 @@ from .models.docente import Docente
 from .models.seccion import Seccion
 from .models.estudiante import Estudiante
 from .models.horario import Horario
+from .models.tipo_documento import TipoDocumento
 
 
 def _safe_add(entity, desc="entidad"):
@@ -173,24 +174,28 @@ def seed_test_data():
             "fecha_inicio": datetime(2025, 3, 3),
             "fecha_fin": datetime(2025, 7, 18),
             "estado": "cerrado",
+            "requiere_pago": True,
         },
         {
             "semestre": "2025-II",
             "fecha_inicio": datetime(2025, 8, 18),
             "fecha_fin": datetime(2025, 12, 19),
             "estado": "cerrado",
+            "requiere_pago": True,
         },
         {
             "semestre": "2026-I",
             "fecha_inicio": datetime(2026, 3, 1),
             "fecha_fin": datetime(2026, 7, 15),
             "estado": "activo",
+            "requiere_pago": True,
         },
         {
             "semestre": "2026-II",
             "fecha_inicio": datetime(2026, 8, 17),
             "fecha_fin": datetime(2026, 12, 18),
             "estado": "planificado",
+            "requiere_pago": False,
         },
     ]
 
@@ -544,12 +549,28 @@ def seed_test_data():
                     f"Estudiante {data['email']}",
                 )
 
+    # ── 9. Tipos de documento ───────────────────
+    tipos_documento_data = [
+        {"nombre": "Constancia de estudios", "requiere_pago": False},
+        {"nombre": "Certificado de notas", "requiere_pago": True},
+        {"nombre": "Constancia de matrícula", "requiere_pago": True},
+    ]
+    tipos_creados = 0
+    for t in tipos_documento_data:
+        if not TipoDocumento.query.filter_by(nombre=t["nombre"]).first():
+            _safe_add(
+                TipoDocumento(nombre=t["nombre"], requiere_pago=t["requiere_pago"], activo=True),
+                f"TipoDocumento {t['nombre']}",
+            )
+            tipos_creados += 1
+
     # ── Persistir ───────────────────────────────
     db.session.commit()
     print("[SEED] Datos de prueba insertados correctamente.")
     print(f"  Cursos: {len(cursos)}")
     print(f"  Periodos: {len(periodos)}")
     print(f"  Docentes: {len(docentes)}")
+    print(f"  Tipos de documento nuevos: {tipos_creados}")
     print(f"  Secciones/horarios del periodo {periodo_activo.semestre} creados.")
     print("  Logins (@sistema.edu):")
     print("    admin@sistema.edu / admin123")

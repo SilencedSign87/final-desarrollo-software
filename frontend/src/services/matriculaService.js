@@ -12,8 +12,14 @@ export const getMatricula = async (matriculaId) => {
     return apiClient.get(`/matriculas/${matriculaId}`)
 }
 
-export const createMatricula = async (data) => {
-    return apiClient.post('/matriculas/', data)
+export const createMatricula = async ({ periodo_academico_id, secciones_ids, comprobante }) => {
+    const formData = new FormData()
+    formData.append('periodo_academico_id', String(periodo_academico_id))
+    formData.append('secciones_ids', JSON.stringify(secciones_ids))
+    if (comprobante) {
+        formData.append('comprobante', comprobante)
+    }
+    return apiClient.post('/matriculas/', formData)
 }
 
 export const validarMatricula = async (matriculaId, data) => {
@@ -26,4 +32,8 @@ export const getMatriculaEstadisticas = async () => {
 
 export const getFichaDownloadUrl = (matriculaId) => {
     return `/api/matriculas/${matriculaId}/ficha`
+}
+
+export const getComprobanteDownloadUrl = (matriculaId) => {
+    return `/api/matriculas/${matriculaId}/comprobante`
 }

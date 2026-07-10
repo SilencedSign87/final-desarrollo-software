@@ -34,6 +34,7 @@ def _to_response(pa):
         fecha_inicio=pa.fecha_inicio.isoformat(),
         fecha_fin=pa.fecha_fin.isoformat(),
         estado=pa.estado,
+        requiere_pago=bool(pa.requiere_pago),
     ).model_dump()
 
 
@@ -102,11 +103,11 @@ def get_cursos_by_periodo_academico(path: PeriodoAcademicoPath):
     responses={"201": PeriodoAcademicoResponse, "401": ErrorResponse},
 )
 def crear_periodo_academico(body: PeriodoAcademicoCreate):
-    """Admin crea un nuevo periodo académico."""
+    """Admin o dirección crea un nuevo periodo académico."""
 
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
-        return {"message": "Solo un administrador puede crear periodos académicos"}, 401
+    if not user or user.rol not in ("administrador", "direccion"):
+        return {"message": "No autorizado para crear periodos académicos"}, 401
 
     periodo = PeriodoAcademicoService.create(body.model_dump())
     return _to_response(periodo), 201
@@ -123,12 +124,12 @@ def crear_periodo_academico(body: PeriodoAcademicoCreate):
 def actualizar_periodo_academico(
     path: PeriodoAcademicoPath, body: PeriodoAcademicoUpdate
 ):
-    """Admin actualiza un periodo académico existente."""
+    """Admin o dirección actualiza un periodo (incluye requiere_pago)."""
 
     user = AuthService.get_current_user()
-    if not user or user.rol != "administrador":
+    if not user or user.rol not in ("administrador", "direccion"):
         return {
-            "message": "Solo un administrador puede editar periodos académicos"
+            "message": "No autorizado para editar periodos académicos"
         }, 401
 
     periodo = PeriodoAcademicoService.update(

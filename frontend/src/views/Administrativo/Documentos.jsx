@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FileCheck } from 'lucide-react'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
+import TipoDocumentoPagoConfig from '../../components/documents/TipoDocumentoPagoConfig'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
 import { getDocumentRequests, issueDocument } from '../../services/documentsService'
@@ -87,6 +88,8 @@ export default function AdministrativoDocumentos() {
                 </p>
             </div>
 
+            <TipoDocumentoPagoConfig />
+
             {error && (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {error}
@@ -102,6 +105,7 @@ export default function AdministrativoDocumentos() {
                     requests={requests}
                     emptyMessage="No hay solicitudes registradas."
                     showDownload
+                    showComprobante
                     actions={(request) =>
                         request.estado === 'autorizado' ? (
                             <button

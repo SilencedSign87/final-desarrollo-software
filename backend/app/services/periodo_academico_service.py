@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ..extensions import db
 from ..models.periodo_academico import PeriodoAcademico
 from ..models.seccion import Seccion
@@ -7,6 +9,15 @@ from ..models.matricula import Matricula
 
 
 class PeriodoAcademicoService:
+
+    @staticmethod
+    def _normalize(data):
+        payload = dict(data)
+        for key in ("fecha_inicio", "fecha_fin"):
+            value = payload.get(key)
+            if isinstance(value, str):
+                payload[key] = datetime.fromisoformat(value)
+        return payload
 
     @staticmethod
     def search(query):
@@ -26,7 +37,7 @@ class PeriodoAcademicoService:
 
     @staticmethod
     def create(data):
-        periodo = PeriodoAcademico(**data)
+        periodo = PeriodoAcademico(**PeriodoAcademicoService._normalize(data))
         db.session.add(periodo)
         db.session.commit()
         return periodo
@@ -36,7 +47,8 @@ class PeriodoAcademicoService:
         periodo = PeriodoAcademico.query.get(periodo_id)
         if not periodo:
             return None
-        for key, value in data.items():
+        payload = PeriodoAcademicoService._normalize(data)
+        for key, value in payload.items():
             if value is not None:
                 setattr(periodo, key, value)
         db.session.commit()

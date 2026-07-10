@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import MatriculasTable from '../../components/matricula/MatriculasTable'
+import PeriodoPagoConfig from '../../components/matricula/PeriodoPagoConfig'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
 import { getMatriculas, validarMatricula } from '../../services/matriculaService'
@@ -103,6 +104,8 @@ export default function AdministrativoMatricula() {
                     Revisa el comprobante de pago y valida o rechaza cada solicitud.
                 </p>
             </div>
+
+            <PeriodoPagoConfig />
 
             <div className="flex gap-2">
                 {FILTROS.map((filtro) => (

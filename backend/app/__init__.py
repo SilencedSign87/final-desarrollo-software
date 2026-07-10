@@ -47,6 +47,7 @@ def create_app():
         TipoEvaluacion,
         Evaluacion,
         SolicitudDocumento,
+        TipoDocumento,
     )
 
     # Registro de rutas
@@ -93,5 +94,9 @@ def create_app():
     from .routes.evaluaciones import evaluaciones_bp
     
     app.register_api(evaluaciones_bp, url_prefix="/api/evaluaciones")
+
+    from .routes.tipo_documento import tipo_documento_bp
+
+    app.register_api(tipo_documento_bp, url_prefix="/api/tipos-documento")
 
     return app

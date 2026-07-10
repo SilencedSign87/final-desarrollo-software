@@ -1,5 +1,5 @@
 import MatriculaStatusBadge from './MatriculaStatusBadge'
-import { getFichaDownloadUrl } from '../../services/matriculaService'
+import { getComprobanteDownloadUrl, getFichaDownloadUrl } from '../../services/matriculaService'
 
 export default function MatriculasTable({ matriculas, emptyMessage, actions, showFicha = false }) {
     if (!matriculas?.length) {
@@ -30,62 +30,75 @@ export default function MatriculasTable({ matriculas, emptyMessage, actions, sho
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 bg-white">
-                    {matriculas.map((matricula) => (
-                        <tr key={matricula.id}>
-                            <td className="px-4 py-3 text-neutral-900">{matricula.id}</td>
-                            <td className="px-4 py-3 text-neutral-700">{matricula.estudiante_nombre ?? matricula.estudiante_id}</td>
-                            <td className="px-4 py-3 text-neutral-700">{matricula.periodo_semestre ?? matricula.periodo_academico_id}</td>
-                            <td className="px-4 py-3 text-neutral-700">
-                                {matricula.detalles?.length ? (
-                                    <ul className="space-y-0.5">
-                                        {matricula.detalles.map((detalle) => (
-                                            <li key={detalle.id}>
-                                                {detalle.curso_nombre ?? 'Curso'} <span className="text-neutral-400">({detalle.seccion_nombre ?? detalle.seccion_id})</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <span className="text-xs text-neutral-500">Sin cursos</span>
-                                )}
-                            </td>
-                            <td className="px-4 py-3">
-                                <MatriculaStatusBadge status={matricula.estado} />
-                            </td>
-                            <td className="px-4 py-3">
-                                {matricula.comprobante_url ? (
-                                    <a
-                                        href={matricula.comprobante_url}
-                                        className="text-blue-700 hover:underline"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                    >
-                                        Ver comprobante
-                                    </a>
-                                ) : (
-                                    <span className="text-xs text-neutral-500">No disponible</span>
-                                )}
-                            </td>
-                            {showFicha && (
+                    {matriculas.map((matricula) => {
+                        const comprobanteHref = matricula.comprobante_url?.startsWith('/api/')
+                            ? matricula.comprobante_url
+                            : matricula.comprobante_url?.startsWith('http')
+                                ? matricula.comprobante_url
+                                : matricula.comprobante_url
+                                    ? getComprobanteDownloadUrl(matricula.id)
+                                    : null
+
+                        return (
+                            <tr key={matricula.id}>
+                                <td className="px-4 py-3 text-neutral-900">{matricula.id}</td>
+                                <td className="px-4 py-3 text-neutral-700">{matricula.estudiante_nombre ?? matricula.estudiante_id}</td>
+                                <td className="px-4 py-3 text-neutral-700">{matricula.periodo_semestre ?? matricula.periodo_academico_id}</td>
+                                <td className="px-4 py-3 text-neutral-700">
+                                    {matricula.detalles?.length ? (
+                                        <ul className="space-y-0.5">
+                                            {matricula.detalles.map((detalle) => (
+                                                <li key={detalle.id}>
+                                                    {detalle.curso_nombre ?? 'Curso'}{' '}
+                                                    <span className="text-neutral-400">
+                                                        ({detalle.seccion_nombre ?? detalle.seccion_id})
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <span className="text-xs text-neutral-500">Sin cursos</span>
+                                    )}
+                                </td>
                                 <td className="px-4 py-3">
-                                    {matricula.estado === 'validada' ? (
+                                    <MatriculaStatusBadge status={matricula.estado} />
+                                </td>
+                                <td className="px-4 py-3">
+                                    {comprobanteHref ? (
                                         <a
-                                            href={getFichaDownloadUrl(matricula.id)}
+                                            href={comprobanteHref}
                                             className="text-blue-700 hover:underline"
                                             target="_blank"
                                             rel="noreferrer"
                                         >
-                                            Descargar PDF
+                                            Ver comprobante
                                         </a>
                                     ) : (
                                         <span className="text-xs text-neutral-500">No disponible</span>
                                     )}
                                 </td>
-                            )}
-                            {actions && (
-                                <td className="px-4 py-3">{actions(matricula)}</td>
-                            )}
-                        </tr>
-                    ))}
+                                {showFicha && (
+                                    <td className="px-4 py-3">
+                                        {matricula.estado === 'validada' ? (
+                                            <a
+                                                href={getFichaDownloadUrl(matricula.id)}
+                                                className="text-blue-700 hover:underline"
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                Descargar PDF
+                                            </a>
+                                        ) : (
+                                            <span className="text-xs text-neutral-500">No disponible</span>
+                                        )}
+                                    </td>
+                                )}
+                                {actions && (
+                                    <td className="px-4 py-3">{actions(matricula)}</td>
+                                )}
+                            </tr>
+                        )
+                    })}
                 </tbody>
             </table>
         </div>

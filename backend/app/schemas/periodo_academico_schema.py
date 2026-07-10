@@ -6,7 +6,7 @@ from app.schemas.curso_schema import CursoResponse
 class PeriodoAcademicoSearchRequest(BaseModel):
     """Schema para búsqueda de periodos académicos"""
     semestre: str | None = Field(None, description="Semestre del periodo académico")
-    estado: str | None = Field(None, description="Estado del periodo académico (activo/inactivo)")
+    estado: str | None = Field(None, description="Estado del periodo académico")
 
 
 class PeriodoAcademicoCreate(BaseModel):
@@ -14,7 +14,8 @@ class PeriodoAcademicoCreate(BaseModel):
     semestre: str = Field(..., min_length=1, max_length=50, description="Semestre (ej. 2026-I)")
     fecha_inicio: str = Field(..., description="Fecha de inicio (YYYY-MM-DD)")
     fecha_fin: str = Field(..., description="Fecha de fin (YYYY-MM-DD)")
-    estado: str = Field(..., pattern=r"^(activo|inactivo)$", description="Estado del periodo")
+    estado: str = Field(..., min_length=1, max_length=50, description="Estado del periodo")
+    requiere_pago: bool = Field(False, description="Si la matrícula exige comprobante de pago")
 
 
 class PeriodoAcademicoUpdate(BaseModel):
@@ -22,7 +23,8 @@ class PeriodoAcademicoUpdate(BaseModel):
     semestre: str | None = Field(None, min_length=1, max_length=50)
     fecha_inicio: str | None = Field(None, description="Fecha de inicio (YYYY-MM-DD)")
     fecha_fin: str | None = Field(None, description="Fecha de fin (YYYY-MM-DD)")
-    estado: str | None = Field(None, pattern=r"^(activo|inactivo)$")
+    estado: str | None = Field(None, min_length=1, max_length=50)
+    requiere_pago: bool | None = Field(None, description="Si la matrícula exige comprobante de pago")
 
 
 class PeriodoAcademicoResponse(BaseModel):
@@ -32,10 +34,13 @@ class PeriodoAcademicoResponse(BaseModel):
     fecha_inicio: str
     fecha_fin: str
     estado: str
+    requiere_pago: bool = False
+
 
 class PeriodoAcademicoListResponse(RootModel[list[PeriodoAcademicoResponse]]):
     """Wrapper para que flask_openapi3 acepte una lista de periodos académicos como respuesta válida"""
     pass
+
 
 class CursosPorPeriodoResponse(RootModel[list[CursoResponse]]):
     """Schema para respuesta de cursos por periodo académico"""

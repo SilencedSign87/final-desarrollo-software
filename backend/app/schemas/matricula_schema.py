@@ -3,10 +3,12 @@ from typing import Optional
 
 
 class MatriculaCreate(BaseModel):
-    """Schema para que el estudiante solicite una matrícula"""
+    """Schema para que el estudiante solicite una matrícula (JSON sin archivo)."""
     periodo_academico_id: int = Field(..., description="ID del periodo académico")
-    comprobante_url: str = Field(..., min_length=1, description="URL/ruta del comprobante de pago subido")
-    secciones_ids: list[int] = Field(..., min_length=1, description="IDs de las secciones a las que se matricula")
+    comprobante_url: Optional[str] = Field(
+        None, description="URL externa del comprobante (alternativa al archivo)"
+    )
+    secciones_ids: list[int] = Field(..., min_length=1, description="IDs de las secciones")
 
 
 class MatriculaValidar(BaseModel):
@@ -28,6 +30,7 @@ class MatriculaResponse(BaseModel):
     id: int
     periodo_academico_id: int
     periodo_semestre: Optional[str] = None
+    periodo_requiere_pago: bool = False
     estudiante_id: int
     estudiante_nombre: Optional[str] = None
     estado: str

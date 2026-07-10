@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import MatriculaSummaryCards from '../../components/matricula/MatriculaSummaryCards'
+import PeriodoPagoConfig from '../../components/matricula/PeriodoPagoConfig'
 import Spinner from '../../components/spinner'
 import { getMatriculaEstadisticas } from '../../services/matriculaService'
 
@@ -41,6 +42,8 @@ export default function DireccionMatricula() {
                     Supervisa el estado de las solicitudes de matrícula por facultad.
                 </p>
             </div>
+
+            <PeriodoPagoConfig />
 
             {error && (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

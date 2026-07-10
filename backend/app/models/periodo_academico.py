@@ -8,6 +8,7 @@ class PeriodoAcademico(db.Model):
     fecha_inicio = db.Column(db.DateTime, nullable=False)
     fecha_fin = db.Column(db.DateTime, nullable=False)
     estado = db.Column(db.String(50), nullable=False)
+    requiere_pago = db.Column(db.Boolean, nullable=False, default=False)
 
     # Relationships
     secciones = db.relationship('Seccion', backref='periodo_academico', lazy=True)

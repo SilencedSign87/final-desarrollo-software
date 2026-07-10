@@ -8,10 +8,16 @@ export const PeriodoAcademicoService = {
     getById: async (id) => {
         return apiClient.get(`/periodos-academicos/${id}`)
     },
+
     getCursosByPeriodoAcademico: async (periodoAcademicoId) => {
         return apiClient.get(`/periodos-academicos/${periodoAcademicoId}/cursos`)
     },
-    getPeriodosMatriculados: async (estudianteId) => {
+
+    getPeriodosMatriculados: async () => {
         return apiClient.get(`/periodos-academicos/me`)
-    }
+    },
+
+    update: async (id, data) => {
+        return apiClient.put(`/periodos-academicos/${id}`, data)
+    },
 }

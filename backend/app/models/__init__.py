@@ -13,3 +13,4 @@ from .detalle_matricula import DetalleMatricula
 from .tipo_evaluacion import TipoEvaluacion
 from .evaluacion import Evaluacion
 from .solicitud_documento import SolicitudDocumento
+from .tipo_documento import TipoDocumento

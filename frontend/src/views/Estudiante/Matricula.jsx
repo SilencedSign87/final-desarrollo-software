@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ClipboardList, Plus } from 'lucide-react'
 import MatriculasTable from '../../components/matricula/MatriculasTable'
 import Dialog from '../../components/Dialog'
@@ -12,12 +12,18 @@ export default function EstudianteMatricula() {
     const [periodos, setPeriodos] = useState([])
     const [secciones, setSecciones] = useState([])
     const [periodoId, setPeriodoId] = useState('')
-    const [comprobanteUrl, setComprobanteUrl] = useState('')
+    const [comprobante, setComprobante] = useState(null)
     const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
     const [dialogOpen, setDialogOpen] = useState(false)
+
+    const periodoSeleccionado = useMemo(
+        () => periodos.find((periodo) => String(periodo.id) === String(periodoId)),
+        [periodos, periodoId]
+    )
+    const requierePago = Boolean(periodoSeleccionado?.requiere_pago)
 
     const loadMatriculas = useCallback(async ({ showLoading = false } = {}) => {
         if (showLoading) {
@@ -76,7 +82,7 @@ export default function EstudianteMatricula() {
     const handleOpenDialog = async () => {
         setDialogOpen(true)
         setSeccionesSeleccionadas([])
-        setComprobanteUrl('')
+        setComprobante(null)
 
         if (periodos[0]) {
             const primerPeriodo = periodos[0].id
@@ -98,6 +104,7 @@ export default function EstudianteMatricula() {
         const nuevoPeriodo = event.target.value
         setPeriodoId(nuevoPeriodo)
         setSeccionesSeleccionadas([])
+        setComprobante(null)
         await cargarSecciones(nuevoPeriodo)
     }
 
@@ -114,11 +121,17 @@ export default function EstudianteMatricula() {
         setIsSubmitting(true)
         setError(null)
 
+        if (requierePago && !comprobante) {
+            setError('Debes adjuntar el comprobante de pago para este periodo')
+            setIsSubmitting(false)
+            return
+        }
+
         try {
             await createMatricula({
                 periodo_academico_id: Number(periodoId),
-                comprobante_url: comprobanteUrl,
                 secciones_ids: seccionesSeleccionadas,
+                comprobante,
             })
             setDialogOpen(false)
             await loadMatriculas({ showLoading: true })
@@ -159,6 +172,7 @@ export default function EstudianteMatricula() {
                                         {periodos.map((periodo) => (
                                             <option key={periodo.id} value={periodo.id}>
                                                 {periodo.semestre}
+                                                {periodo.requiere_pago ? ' (requiere pago)' : ''}
                                             </option>
                                         ))}
                                     </select>
@@ -184,16 +198,18 @@ export default function EstudianteMatricula() {
                                     )}
                                 </div>
 
-                                <label className="flex flex-col gap-2 text-sm">
-                                    URL del comprobante de pago
-                                    <input
-                                        type="text"
-                                        value={comprobanteUrl}
-                                        onChange={(event) => setComprobanteUrl(event.target.value)}
-                                        placeholder="https://..."
-                                        required
-                                    />
-                                </label>
+                                {requierePago && (
+                                    <label className="flex flex-col gap-2 text-sm">
+                                        Comprobante de pago (PDF o imagen)
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                                            onChange={(event) => setComprobante(event.target.files?.[0] ?? null)}
+                                            required
+                                        />
+                                        <span className="text-xs text-neutral-500">Máximo 5 MB</span>
+                                    </label>
+                                )}
                             </form>
                         </Dialog.Content>
                         <Dialog.Footer>
