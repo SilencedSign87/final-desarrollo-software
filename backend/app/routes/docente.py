@@ -73,6 +73,23 @@ def listar_docentes():
 
 
 @docente_bp.get(
+    "/me",
+    responses={"200": DocenteResponse, "400": ErrorResponse, "401": ErrorResponse},
+)
+def mi_perfil_docente():
+    """El docente autenticado obtiene su propio perfil (id, categoría, etc.)"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "docente":
+        return {"error": "Solo un docente puede consultar su perfil"}, 401
+
+    docente = DocenteService.obtener_docente_por_user_id(user.id)
+    if not docente:
+        return {"error": "No se encontró el perfil de docente asociado a este usuario"}, 400
+
+    return _to_response(docente), 200
+
+
+@docente_bp.get(
     "/<int:docente_id>",
     responses={"200": DocenteResponse, "404": ErrorResponse},
 )
