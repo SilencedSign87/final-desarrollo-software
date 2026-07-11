@@ -349,8 +349,8 @@ def seed_test_data():
             ],
         },
         {
-            "curso": "Programación Orientada a Objetos",
-            "nombre": "POO-A",
+            "curso": "Introducción a la Programación",
+            "nombre": "INT-A",
             "aforo": 35,
             "docente_idx": 4,
             "horarios": [

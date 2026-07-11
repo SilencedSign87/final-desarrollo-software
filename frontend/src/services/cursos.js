@@ -22,3 +22,7 @@ export const deleteCurso = async (cursoId) => {
 
 // Se mantiene por compatibilidad con el stub previo (GetCursos)
 export const GetCursos = getCursos
+
+export const GetCursosDisponibles = () => {
+    return apiClient.get('/cursos/disponibles')
+}

@@ -5,10 +5,12 @@ from ..schemas.curso_schema import (
     CursoUpdate,
     CursoResponse,
     CursoListResponse,
+    CursosDisponiblesResponse,
 )
 from ..schemas.generic_schema import ErrorResponse
 from ..services.curso_service import CursoService
 from ..services.auth_service import AuthService
+from ..services.matricula_service import MatriculaService
 
 curso_tag = Tag(name="Curso", description="Gestión de cursos del plan de estudios")
 
@@ -58,6 +60,31 @@ def listar_cursos(query: CursoQuery):
     """Listar cursos (filtrable por plan de estudios o semestre). Público para cualquier autenticado."""
     cursos = CursoService.listar_cursos(query.plan_estudios_id, query.semestre_num)
     return [_to_response(c) for c in cursos], 200
+
+
+@curso_bp.get(
+    "/disponibles",
+    responses={"200": CursosDisponiblesResponse, "400": ErrorResponse, "401": ErrorResponse},
+)
+def listar_disponibles():
+    """El estudiante autenticado ve solo los cursos de su semestre cuyos prerequisitos ya cumple"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "estudiante":
+        return {"error": "Solo un estudiante puede consultar sus cursos disponibles"}, 401
+
+    estudiante = MatriculaService.obtener_estudiante_por_user_id(user.id)
+    if not estudiante:
+        return {"error": "No se encontró el perfil de estudiante asociado"}, 400
+
+    try:
+        cursos, semestre_actual = CursoService.listar_disponibles_para_matricula(estudiante.id)
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+    return {
+        "semestre_actual": semestre_actual,
+        "cursos": [_to_response(c) for c in cursos],
+    }, 200
 
 
 @curso_bp.get(

@@ -9,6 +9,7 @@ from ..models.detalle_matricula import DetalleMatricula
 from ..models.seccion import Seccion
 from ..models.estudiante import Estudiante
 from ..models.periodo_academico import PeriodoAcademico
+from ..services.curso_service import CursoService
 from .file_service import FileService
 
 
@@ -18,24 +19,74 @@ class MatriculaService:
     def crear_matricula(estudiante_id, data, comprobante_file=None):
         """
         Crea una matrícula en estado 'pendiente' junto con sus detalles.
-        Si el periodo requiere pago, exige comprobante (archivo o URL).
+        Valida cupos, prerequisitos, semestre y, si el periodo lo exige,
+        el comprobante de pago (archivo o URL).
         """
         periodo = PeriodoAcademico.query.get(data["periodo_academico_id"])
         if not periodo:
             raise ValueError("El periodo académico no existe")
 
+        secciones_ids = list(dict.fromkeys(data["secciones_ids"]))
+
         secciones = Seccion.query.filter(
-            Seccion.id.in_(data["secciones_ids"])
+            Seccion.id.in_(secciones_ids)
         ).all()
 
-        if len(secciones) != len(data["secciones_ids"]):
+        if len(secciones) != len(secciones_ids):
             raise ValueError("Una o más secciones no existen")
+
+        matricula_existente = Matricula.query.filter(
+            Matricula.estudiante_id == estudiante_id,
+            Matricula.periodo_academico_id == periodo.id,
+            Matricula.estado.in_(["pendiente", "validada"]),
+        ).first()
+        if matricula_existente:
+            raise ValueError(
+                f"Ya existe una matrícula {matricula_existente.estado} para este "
+                f"periodo (id={matricula_existente.id}). No se puede crear otra."
+            )
 
         for seccion in secciones:
             if seccion.periodo_academico_id != periodo.id:
                 raise ValueError(
-                    f"La sección '{seccion.nombre}' no pertenece al periodo seleccionado"
+                    f"La sección '{seccion.nombre}' no pertenece al periodo académico indicado"
                 )
+
+        cursos_vistos = {}
+        for seccion in secciones:
+            if seccion.curso_id in cursos_vistos:
+                raise ValueError(
+                    f"Seleccionaste dos secciones del mismo curso "
+                    f"'{seccion.curso.nombre}' ({cursos_vistos[seccion.curso_id]} y {seccion.nombre})"
+                )
+            cursos_vistos[seccion.curso_id] = seccion.nombre
+
+        semestre_actual, aprobados_ids = (
+            CursoService.obtener_semestre_actual_y_aprobados(estudiante_id)
+        )
+        for seccion in secciones:
+            curso = seccion.curso
+            if curso.semestre_num > semestre_actual:
+                raise ValueError(
+                    f"El curso '{curso.nombre}' pertenece al semestre "
+                    f"{curso.semestre_num}, pero el estudiante está en el "
+                    f"semestre {semestre_actual}"
+                )
+            if curso.id in aprobados_ids:
+                raise ValueError(
+                    f"El curso '{curso.nombre}' ya fue aprobado, no se puede "
+                    f"volver a matricular"
+                )
+            prereqs_faltantes = [
+                p.nombre for p in curso.prerequisitos if p.id not in aprobados_ids
+            ]
+            if prereqs_faltantes:
+                raise ValueError(
+                    f"No cumple los prerequisitos de '{curso.nombre}': "
+                    f"falta aprobar {', '.join(prereqs_faltantes)}"
+                )
+
+        for seccion in secciones:
             ya_matriculados = DetalleMatricula.query.filter_by(
                 seccion_id=seccion.id
             ).count()

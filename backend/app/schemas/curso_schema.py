@@ -33,3 +33,9 @@ class CursoResponse(BaseModel):
 class CursoListResponse(RootModel[list[CursoResponse]]):
     """Wrapper para que flask_openapi3 acepte una lista de cursos como respuesta válida"""
     pass
+
+
+class CursosDisponiblesResponse(BaseModel):
+    """Respuesta de /cursos/disponibles: cursos que le tocan al estudiante en su semestre actual"""
+    semestre_actual: int
+    cursos: list[CursoResponse]
