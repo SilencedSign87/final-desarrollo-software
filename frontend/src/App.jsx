@@ -29,6 +29,8 @@ import AdministrativoCursos from "./views/Administrativo/Cursos"
 import AdministrativoDocentes from "./views/Administrativo/Docentes"
 import AdministrativoSecciones from "./views/Administrativo/Secciones"
 import DireccionCargaDocente from "./views/Direccion/CargaDocente"
+import EstudianteRecordAcademico from "./views/Estudiante/EstudianteRecordAcademico"
+import DireccionNotas from "./views/Direccion/DireccionNotas"
 
 function App() {
   return (
@@ -55,6 +57,7 @@ function App() {
             <Route path="matricula" element={<EstudianteMatricula />} />
             <Route path="documentos" element={<EstudianteDocumentos />} />
             <Route path="notas" element={<NotasEstudiante />} />
+            <Route path="record-academico" element={<EstudianteRecordAcademico/>} />
           </Route>
 
           {/* Docente */}
@@ -106,6 +109,7 @@ function App() {
             <Route path="carga-docente" element={<DireccionCargaDocente />} />
             <Route path="documentos" element={<DireccionDocumentos />} />
             <Route path="auditorias" element={<DireccionAuditorias />} />
+            <Route path="notas" element={<DireccionNotas />} />
           </Route>
         </Routes>
       </BrowserRouter>

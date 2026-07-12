@@ -69,6 +69,12 @@ export default function NotasDocente() {
         setNotaSeccion(response.data)
     }
 
+    const handleVerifyNota = (raw) => {
+        const parsed = parseFloat(raw)
+        if (isNaN(parsed)) return raw
+        return Math.min(20, Math.max(0, parsed)).toString()
+    }
+
     const handleNotaChange = async (detalle_matricula_id, notaInfo, newValue) => {
         const nota = parseFloat(newValue)
         if (isNaN(nota)) return
@@ -216,6 +222,7 @@ export default function NotasDocente() {
                                                                             <EditableText
                                                                                 className="inline-flex justify-center"
                                                                                 value="--"
+                                                                                onVerification={handleVerifyNota}
                                                                                 onChange={(newValue) =>
                                                                                     handleNotaChange(est.detalle_matricula_id, n, newValue)
                                                                                 }
@@ -224,6 +231,7 @@ export default function NotasDocente() {
                                                                             <EditableText
                                                                                 className="inline-flex justify-center"
                                                                                 value={n.nota}
+                                                                                onVerification={handleVerifyNota}
                                                                                 onChange={(newValue) =>
                                                                                     handleNotaChange(est.detalle_matricula_id, n, newValue)
                                                                                 }

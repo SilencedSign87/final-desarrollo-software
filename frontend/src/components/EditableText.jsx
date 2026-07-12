@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from "react"
 import { twMerge } from "tailwind-merge"
 
-export default function EditableText({ value, onChange, className, ...props }) {
+export default function EditableText({ value, onChange, onVerification, className, ...props }) {
     const [isEditing, setIsEditing] = useState(false)
     const [text, setText] = useState(value)
     const spanRef = useRef(null)
+
+    const verify = (raw) => onVerification ? onVerification(raw) : raw
 
     const handleKeyDown = (event) => {
         if (event.key === 'F2') {
             setIsEditing(!isEditing)
         } else if (event.key === 'Enter' && isEditing) {
             setIsEditing(false)
-            if (text !== value) onChange(text)
+            if (text !== value) onChange(verify(text))
         } else if (event.key === 'Escape' && isEditing) {
             setIsEditing(false)
             setText(value)
@@ -28,7 +30,7 @@ export default function EditableText({ value, onChange, className, ...props }) {
     const handleBlur = () => {
         if (isEditing) {
             setIsEditing(false)
-            if (text !== value) onChange(text)
+            if (text !== value) onChange(verify(text))
         }
     }
 

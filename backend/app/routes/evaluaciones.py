@@ -12,6 +12,8 @@ from ..schemas.evaluacion_schema import (
     TipoEvaluacionListResponse,
     EstudianteSimpleResponse,
     NotasEstudianteListResponse,
+    RecordAcademicoResponse,
+    EstadisticasNotasResponse,
 )
 from ..schemas.generic_schema import ErrorResponse
 from ..services.evaluacion_service import EvaluacionService, TipoEvaluacionService
@@ -329,6 +331,12 @@ def listar_notas_por_seccion(path: SeccionPath):
     return resultados, 200
 
 
+class DireccionEstadisticasQuery(BaseModel):
+    periodo_academico_id: int = Field(..., description="ID del periodo académico")
+    curso_id: int | None = Field(None, description="Filtrar por curso")
+    seccion_id: int | None = Field(None, description="Filtrar por sección")
+
+
 class NotasEstudianteQuery(BaseModel):
     periodo_academico_id: int = Field(..., description="ID del periodo académico")
 
@@ -355,3 +363,47 @@ def listar_notas_estudiante(query: NotasEstudianteQuery):
         estudiante.id, query.periodo_academico_id
     )
     return notas, 200
+
+
+@evaluaciones_bp.get(
+    "/direccion/estadisticas",
+    responses={
+        "200": EstadisticasNotasResponse,
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+    },
+)
+def estadisticas_notas_direccion(query: DireccionEstadisticasQuery):
+    """Dirección consulta estadísticas de notas por periodo académico."""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "direccion":
+        return {"error": "No autorizado"}, 401
+
+    stats = EvaluacionService.estadisticas_notas(
+        periodo_academico_id=query.periodo_academico_id,
+        curso_id=query.curso_id,
+        seccion_id=query.seccion_id,
+    )
+    return stats, 200
+
+
+@evaluaciones_bp.get(
+    "/estudiante/record-academico",
+    responses={
+        "200": RecordAcademicoResponse,
+        "401": ErrorResponse,
+        "404": ErrorResponse,
+    },
+)
+def record_academico():
+    """Obtener el record académico completo del estudiante"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "estudiante":
+        return {"error": "No autorizado"}, 401
+
+    estudiante = user.estudiante
+    if not estudiante:
+        return {"error": "Perfil de estudiante no encontrado"}, 404
+
+    record = EvaluacionService.record_academico(estudiante.id)
+    return record, 200

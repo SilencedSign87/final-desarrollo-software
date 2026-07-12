@@ -51,5 +51,13 @@ export const EvaluacionService = {
         return apiClient.post(`/evaluaciones/seccion/${seccion_id}/validar-promedio`, {
             detalle_matricula_id
         })
+    },
+    getRecordAcademico: async () => {
+        return apiClient.get("/evaluaciones/estudiante/record-academico")
+    },
+    getEstadisticasDireccion: async ({ periodo_academico_id, curso_id, seccion_id } = {}) => {
+        return apiClient.get("/evaluaciones/direccion/estadisticas", {
+            params: { periodo_academico_id, curso_id, seccion_id }
+        })
     }
 }
