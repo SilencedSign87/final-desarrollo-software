@@ -142,8 +142,8 @@ def subir_silabo(path: SeccionPath):
         docente = DocenteService.obtener_docente_por_user_id(user.id)
         if not docente or seccion.docente_id != docente.id:
             return {"error": "No autorizado para subir el sílabo de esta sección"}, 401
-    elif user.rol != "administrador":
-        return {"error": "No autorizado"}, 401
+    else:
+        return {"error": "Solo el docente asignado puede subir el sílabo"}, 401
 
     archivo = request.files.get("silabo")
     try:

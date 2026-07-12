@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarClock, Layers, Pencil, Plus, Trash2, Upload } from 'lucide-react'
+import { CalendarClock, Layers, Pencil, Plus, Trash2 } from 'lucide-react'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
 import { SeccionService } from '../../services/seccionService'
@@ -22,10 +22,6 @@ export default function AdministrativoSecciones() {
     const [editingSeccion, setEditingSeccion] = useState(null)
     const [form, setForm] = useState({ curso_id: '', docente_id: '', periodo_academico_id: '', nombre: '', aforo: 30 })
     const [isSubmitting, setIsSubmitting] = useState(false)
-
-    const [silaboDialogOpen, setSilaboDialogOpen] = useState(false)
-    const [silaboSeccion, setSilaboSeccion] = useState(null)
-    const [silaboUrl, setSilaboUrl] = useState('')
 
     const [horarioDialogOpen, setHorarioDialogOpen] = useState(false)
     const [horarioSeccion, setHorarioSeccion] = useState(null)
@@ -131,27 +127,6 @@ export default function AdministrativoSecciones() {
         }
     }
 
-    const openSilabo = (seccion) => {
-        setSilaboSeccion(seccion)
-        setSilaboUrl(seccion.silabo_url ?? '')
-        setSilaboDialogOpen(true)
-    }
-
-    const handleSubmitSilabo = async (event) => {
-        event.preventDefault()
-        setIsSubmitting(true)
-        setError(null)
-        try {
-            await SeccionService.UploadSilabo(silaboSeccion.id, silaboUrl)
-            setSilaboDialogOpen(false)
-            await reload()
-        } catch (requestError) {
-            setError(requestError.response?.data?.error ?? 'No se pudo subir el sílabo')
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
-
     const openHorarios = async (seccion) => {
         setHorarioSeccion(seccion)
         setHorarioDialogOpen(true)
@@ -251,20 +226,21 @@ export default function AdministrativoSecciones() {
                                         <td className="px-4 py-3 text-neutral-700">{seccion.cupos_ocupados}/{seccion.aforo}</td>
                                         <td className="px-4 py-3">
                                             {seccion.silabo_url ? (
-                                                <a href={seccion.silabo_url} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => SeccionService.VerSilabo(seccion.id)}
+                                                    className="text-blue-700 hover:underline"
+                                                >
                                                     Ver sílabo
-                                                </a>
+                                                </button>
                                             ) : (
-                                                <span className="text-xs text-neutral-500">Sin sílabo</span>
+                                                <span className="text-xs text-neutral-500">El docente aún no lo sube</span>
                                             )}
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex flex-wrap gap-2">
                                                 <button type="button" className="subtle inline-flex items-center gap-1" onClick={() => openEdit(seccion)} title="Editar">
                                                     <Pencil className="h-4 w-4" />
-                                                </button>
-                                                <button type="button" className="subtle inline-flex items-center gap-1" onClick={() => openSilabo(seccion)} title="Subir sílabo">
-                                                    <Upload className="h-4 w-4" />
                                                 </button>
                                                 <button type="button" className="subtle inline-flex items-center gap-1" onClick={() => openHorarios(seccion)} title="Horarios">
                                                     <CalendarClock className="h-4 w-4" />
@@ -327,26 +303,6 @@ export default function AdministrativoSecciones() {
                     </Dialog.Content>
                     <Dialog.Footer>
                         <button type="submit" form="seccion-form" className="primary" disabled={isSubmitting}>
-                            {isSubmitting ? 'Guardando...' : 'Guardar'}
-                        </button>
-                        <Dialog.Trigger className="subtle">Cancelar</Dialog.Trigger>
-                    </Dialog.Footer>
-                </Dialog.Surface>
-            </Dialog>
-
-            <Dialog open={silaboDialogOpen} onOpenChange={setSilaboDialogOpen}>
-                <Dialog.Surface>
-                    <Dialog.Header>Subir sílabo — {silaboSeccion?.nombre}</Dialog.Header>
-                    <Dialog.Content>
-                        <form id="silabo-form" onSubmit={handleSubmitSilabo}>
-                            <label className="flex flex-col gap-2 text-sm">
-                                URL del sílabo
-                                <input type="text" placeholder="https://..." value={silaboUrl} onChange={(event) => setSilaboUrl(event.target.value)} required />
-                            </label>
-                        </form>
-                    </Dialog.Content>
-                    <Dialog.Footer>
-                        <button type="submit" form="silabo-form" className="primary" disabled={isSubmitting}>
                             {isSubmitting ? 'Guardando...' : 'Guardar'}
                         </button>
                         <Dialog.Trigger className="subtle">Cancelar</Dialog.Trigger>
