@@ -5,9 +5,10 @@ import { PeriodoAcademicoService } from "../../services/periodoAcademicoService"
 import { SeccionService } from "../../services/seccionService"
 import { EvaluacionService } from "../../services/evaluacionService"
 import Skeleton from "../../components/Skeleton"
-import { Check, Info } from "lucide-react"
+import { Check, Info, BadgeCheck, CheckCheck } from "lucide-react"
 import EditableText from "../../components/EditableText"
 import Table from "../../components/Table"
+import Dialog from "../../components/Dialog"
 
 export default function NotasAdministrativo() {
     const query = useQuery('administrativo_notas')
@@ -19,6 +20,8 @@ export default function NotasAdministrativo() {
     const [cursos, setCursos] = useState()
     const [secciones, setSecciones] = useState()
     const [notasSeccion, setNotaSeccion] = useState()
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [pendingNotaChange, setPendingNotaChange] = useState(null)
 
     const handleChange = (key) => (event) => {
         const value = event.target.value
@@ -49,7 +52,13 @@ export default function NotasAdministrativo() {
     const handleLoadPeriodoAcademico = async () => {
         setPeriodosAcademicos(undefined)
         const response = await PeriodoAcademicoService.search()
-        setPeriodosAcademicos(response.data)
+        const data = response.data
+        setPeriodosAcademicos(data)
+
+        if (!periodoAcademico) {
+            const activo = data.find((p) => p.estado === "activo")
+            if (activo) query.set({ periodoAcademico: activo.id })
+        }
     }
 
     const handleLoadCursos = async () => {
@@ -79,29 +88,48 @@ export default function NotasAdministrativo() {
         return Math.min(20, Math.max(0, parsed)).toString()
     }
 
-    const handleNotaChange = async (detalle_matricula_id, notaInfo, newValue) => {
+    const handleRequestNotaChange = (detalle_matricula_id, notaInfo, newValue, oldValue, estudianteNombre) => {
         const nota = parseFloat(newValue)
         if (isNaN(nota)) return
+        setPendingNotaChange({ detalle_matricula_id, notaInfo, newValue: nota, oldValue, estudianteNombre })
+        setDialogOpen(true)
+    }
+
+    const handleConfirmNotaChange = async () => {
+        if (!pendingNotaChange) return
+        const { detalle_matricula_id, notaInfo, newValue } = pendingNotaChange
 
         try {
             if (notaInfo.evaluacion_id) {
                 await EvaluacionService.actualizarEvaluacion({
                     id: notaInfo.evaluacion_id,
-                    nota
+                    nota: newValue
                 })
             } else {
                 await EvaluacionService.crearEvaluacion({
                     detalle_matricula_id,
                     tipo_evaluacion_id: notaInfo.tipo_evaluacion_id,
-                    nota,
+                    nota: newValue,
                 })
             }
 
-            await handleFetchEstudiantes()
+            await EvaluacionService.validarPromedio({
+                seccion_id: seccion,
+                detalle_matricula_id,
+            })
 
+            await handleFetchEstudiantes()
         } catch (error) {
             console.error('Error al actualizar la nota:', error)
+        } finally {
+            setDialogOpen(false)
+            setPendingNotaChange(null)
         }
+    }
+
+    const handleCancelNotaChange = () => {
+        setDialogOpen(false)
+        setPendingNotaChange(null)
     }
 
     const handleValidarPromedio = async (detalle_matricula_id) => {
@@ -110,6 +138,15 @@ export default function NotasAdministrativo() {
             await handleFetchEstudiantes()
         } catch (error) {
             console.error('Error al validar promedio:', error)
+        }
+    }
+
+    const handleValidarTodos = async () => {
+        try {
+            await EvaluacionService.validarTodosPromedio({ seccion_id: seccion })
+            await handleFetchEstudiantes()
+        } catch (error) {
+            console.error('Error al validar todos:', error)
         }
     }
 
@@ -145,6 +182,7 @@ export default function NotasAdministrativo() {
     }, [seccion])
 
     const { tipos_evaluacion = [], estudiantes = [] } = notasSeccion ?? {}
+    const pendingCount = estudiantes.filter((e) => !e.is_validated).length
 
     return (
         <>
@@ -225,6 +263,17 @@ export default function NotasAdministrativo() {
                                     ? <Skeleton className="w-full h-48" />
                                     : (
                                         <>
+                                            <div className="flex items-center justify-end px-4 py-2 border-b border-neutral-300 bg-neutral-50">
+                                                {pendingCount > 0 && (
+                                                    <button
+                                                        className="primary inline-flex items-center gap-1.5 text-xs"
+                                                        onClick={handleValidarTodos}
+                                                    >
+                                                        <CheckCheck size={18} />
+                                                        Validar todos ({pendingCount})
+                                                    </button>
+                                                )}
+                                            </div>
                                             <Table>
                                                 <Table.Header>
                                                     <Table.Row>
@@ -252,40 +301,45 @@ export default function NotasAdministrativo() {
                                                                 <Table.Cell>
                                                                     {est.estudiante_nombre}
                                                                 </Table.Cell>
-                                                                {est.notas.map((n) => (
-                                                                    <Table.Cell key={n.tipo_evaluacion_id} className="text-center">
-                                                                        {n.nota === null && n.evaluacion_id === null ? (
+                                                                {est.notas.map((n) => {
+                                                                    const oldValue = n.nota ?? "--"
+                                                                    return (
+                                                                        <Table.Cell key={n.tipo_evaluacion_id} className="text-center">
                                                                             <EditableText
                                                                                 className="inline-flex justify-center"
-                                                                                value="--"
+                                                                                value={oldValue}
                                                                                 onVerification={handleVerifyNota}
                                                                                 onChange={(newValue) =>
-                                                                                    handleNotaChange(est.detalle_matricula_id, n, newValue)
+                                                                                    handleRequestNotaChange(
+                                                                                        est.detalle_matricula_id,
+                                                                                        n,
+                                                                                        newValue,
+                                                                                        oldValue,
+                                                                                        est.estudiante_nombre
+                                                                                    )
                                                                                 }
                                                                             />
-                                                                        ) : (
-                                                                            <EditableText
-                                                                                className="inline-flex justify-center"
-                                                                                value={n.nota}
-                                                                                onVerification={handleVerifyNota}
-                                                                                onChange={(newValue) =>
-                                                                                    handleNotaChange(est.detalle_matricula_id, n, newValue)
-                                                                                }
-                                                                            />
-                                                                        )}
-                                                                    </Table.Cell>
-                                                                ))}
+                                                                        </Table.Cell>
+                                                                    )
+                                                                })}
                                                                 <td className="px-4 py-3 text-center font-medium text-neutral-900">
                                                                     {est.promedio_final ?? '--'}
                                                                 </td>
                                                                 <td className="px-4 py-3 text-center">
-                                                                    <button
-                                                                        className="primary inline-flex items-center gap-1.5 text-xs"
-                                                                        onClick={() => handleValidarPromedio(est.detalle_matricula_id)}
-                                                                    >
-                                                                        <Check size={18} />
-                                                                        Validar
-                                                                    </button>
+                                                                    {est.is_validated ? (
+                                                                        <span className="inline-flex items-center gap-1.5 text-xs text-green-700 bg-green-100 px-2 py-1 rounded font-medium">
+                                                                            <BadgeCheck size={16} />
+                                                                            Validado
+                                                                        </span>
+                                                                    ) : (
+                                                                        <button
+                                                                            className="primary inline-flex items-center gap-1.5 text-xs"
+                                                                            onClick={() => handleValidarPromedio(est.detalle_matricula_id)}
+                                                                        >
+                                                                            <Check size={18} />
+                                                                            Validar
+                                                                        </button>
+                                                                    )}
                                                                 </td>
                                                             </Table.Row>
                                                         ))
@@ -317,6 +371,39 @@ export default function NotasAdministrativo() {
 
                 </div>
             </div>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <Dialog.Surface className="w-96">
+                    <Dialog.Header>Confirmar cambio de nota</Dialog.Header>
+                    <Dialog.Content>
+                        <p className="text-neutral-600">
+                            ¿Está seguro que quiere alterar la nota de{' '}
+                            <span className="font-semibold text-neutral-900">
+                                {pendingNotaChange?.estudianteNombre}
+                            </span>{' '}
+                            de <strong>{pendingNotaChange?.oldValue}</strong> a{' '}
+                            <strong>{pendingNotaChange?.newValue}</strong>?
+                        </p>
+                        <p className="text-neutral-500 mt-2 text-xs">
+                            Esto recalculará y validará el promedio automáticamente.
+                        </p>
+                    </Dialog.Content>
+                    <Dialog.Footer>
+                        <button
+                            className="px-4 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-100"
+                            onClick={handleCancelNotaChange}
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                            onClick={handleConfirmNotaChange}
+                        >
+                            Sí, cambiar nota
+                        </button>
+                    </Dialog.Footer>
+                </Dialog.Surface>
+            </Dialog>
         </>
     )
 }

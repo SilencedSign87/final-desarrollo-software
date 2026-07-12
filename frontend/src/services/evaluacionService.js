@@ -52,12 +52,32 @@ export const EvaluacionService = {
             detalle_matricula_id
         })
     },
+    validarTodosPromedio: async ({ seccion_id }) => {
+        return apiClient.post(`/evaluaciones/seccion/${seccion_id}/validar-todos`)
+    },
     getRecordAcademico: async () => {
         return apiClient.get("/evaluaciones/estudiante/record-academico")
     },
     getEstadisticasDireccion: async ({ periodo_academico_id, curso_id, seccion_id } = {}) => {
         return apiClient.get("/evaluaciones/direccion/estadisticas", {
             params: { periodo_academico_id, curso_id, seccion_id }
+        })
+    },
+    getReporteEstadisticas: async ({ periodo_academico_id, curso_id, seccion_id } = {}) => {
+        return apiClient.get("/evaluaciones/direccion/estadisticas/reporte", {
+            params: { periodo_academico_id, curso_id, seccion_id },
+            responseType: "blob"
+        })
+    },
+    getRecordAcademicoDireccion: async ({ periodo_academico_id }) => {
+        return apiClient.get("/evaluaciones/direccion/record-academico", {
+            params: { periodo_academico_id }
+        })
+    },
+    getReporteRecordAcademico: async ({ periodo_academico_id }) => {
+        return apiClient.get("/evaluaciones/direccion/record-academico/reporte", {
+            params: { periodo_academico_id },
+            responseType: "blob"
         })
     }
 }

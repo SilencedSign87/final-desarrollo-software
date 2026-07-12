@@ -1,4 +1,9 @@
+from io import BytesIO
 from decimal import Decimal
+
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import cm
+from reportlab.pdfgen import canvas
 
 from ..extensions import db
 from ..models.evaluacion import Evaluacion
@@ -135,10 +140,10 @@ class EvaluacionService:
         return detalle.matricula.estudiante
 
     @staticmethod
-    def validar_promedio(detalle_matricula_id):
+    def _calcular_promedio_por_detalle(detalle_matricula_id):
         detalle = DetalleMatricula.query.get(detalle_matricula_id)
         if not detalle:
-            raise ValueError("El detalle de matrícula no existe")
+            return None
 
         tipos = TipoEvaluacion.query.filter_by(seccion_id=detalle.seccion_id).all()
         evaluaciones = Evaluacion.query.filter_by(
@@ -160,9 +165,36 @@ class EvaluacionService:
         else:
             promedio = None
 
+        return float(promedio) if promedio else None
+
+    @staticmethod
+    def validar_promedio(detalle_matricula_id):
+        detalle = DetalleMatricula.query.get(detalle_matricula_id)
+        if not detalle:
+            raise ValueError("El detalle de matrícula no existe")
+
+        promedio = EvaluacionService._calcular_promedio_por_detalle(detalle_matricula_id)
         detalle.promedio_final = promedio
+        detalle.is_validated = True
         db.session.commit()
         return float(promedio) if promedio else None
+
+    @staticmethod
+    def validar_todos_promedio(seccion_id):
+        detalles = DetalleMatricula.query.filter_by(
+            seccion_id=seccion_id,
+            is_validated=False,
+        ).all()
+
+        count = 0
+        for detalle in detalles:
+            try:
+                EvaluacionService.validar_promedio(detalle.id)
+                count += 1
+            except ValueError:
+                continue
+
+        return count
 
     @staticmethod
     def listar_notas_por_seccion(seccion_id):
@@ -182,6 +214,7 @@ class EvaluacionService:
                 User.nombres,
                 User.apellidos,
                 DetalleMatricula.promedio_final,
+                DetalleMatricula.is_validated,
             )
             .join(Matricula, Matricula.id == DetalleMatricula.matricula_id)
             .join(Estudiante, Estudiante.id == Matricula.estudiante_id)
@@ -204,7 +237,7 @@ class EvaluacionService:
         }
 
         estudiantes = []
-        for detalle_id, est_id, nombres, apellidos, promedio in detalles:
+        for detalle_id, est_id, nombres, apellidos, promedio, is_validated in detalles:
             notas = []
             suma_ponderada = Decimal("0")
             suma_pesos = Decimal("0")
@@ -236,6 +269,7 @@ class EvaluacionService:
                     "estudiante_nombre": f"{nombres} {apellidos}",
                     "notas": notas,
                     "promedio_final": promedio or promedio_calculado,
+                    "is_validated": is_validated,
                 }
             )
 
@@ -287,6 +321,7 @@ class EvaluacionService:
                 for t in tipos
             ]
 
+            promedio_calculado = EvaluacionService._calcular_promedio_por_detalle(detalle.id)
             result.append(
                 {
                     "curso": curso.nombre,
@@ -294,6 +329,8 @@ class EvaluacionService:
                     "promedio": (
                         float(detalle.promedio_final) if detalle.promedio_final else None
                     ),
+                    "promedio_calculado": promedio_calculado,
+                    "is_validated": detalle.is_validated,
                     "evaluaciones": evaluaciones_list,
                 }
             )
@@ -496,3 +533,295 @@ class EvaluacionService:
             })
 
         return result
+
+    @staticmethod
+    def record_academico_stats(periodo_academico_id):
+        from ..models.docente import Docente
+        from ..models.user import User
+        from collections import defaultdict
+
+        query = (
+            db.session.query(
+                DetalleMatricula,
+                Seccion,
+                Curso,
+                Docente,
+                User,
+            )
+            .join(Seccion, Seccion.id == DetalleMatricula.seccion_id)
+            .join(Curso, Curso.id == Seccion.curso_id)
+            .join(Docente, Docente.id == Seccion.docente_id)
+            .join(User, User.id == Docente.user_id)
+            .filter(Seccion.periodo_academico_id == periodo_academico_id)
+            .order_by(Curso.semestre_num, Curso.nombre, Seccion.nombre)
+        )
+
+        rows = query.all()
+        periodo = PeriodoAcademico.query.get(periodo_academico_id)
+
+        cursos_map = defaultdict(list)
+        for detalle, seccion, curso, _, user in rows:
+            p = float(detalle.promedio_final) if detalle.promedio_final is not None else None
+            cursos_map[curso.id].append({
+                "seccion_id": seccion.id,
+                "seccion": seccion.nombre,
+                "docente": f"{user.nombres} {user.apellidos}",
+                "promedio": p,
+                "estado": detalle.estado_curso,
+            })
+
+        cursos_result = []
+        for curso_id, grupo in sorted(cursos_map.items()):
+            curso = Curso.query.get(curso_id)
+            secciones_map = defaultdict(list)
+            for item in grupo:
+                secciones_map[item["seccion_id"]].append(item)
+
+            secciones_result = []
+            for sec_id, items in sorted(secciones_map.items()):
+                promedios = [i["promedio"] for i in items if i["promedio"] is not None]
+                total = len(items)
+                aprobados = sum(1 for i in items if i["estado"] == "aprobado")
+                desaprobados = sum(1 for i in items if i["estado"] == "desaprobado")
+                en_curso = sum(1 for i in items if i["estado"] not in ("aprobado", "desaprobado"))
+                secciones_result.append({
+                    "seccion_id": sec_id,
+                    "seccion": items[0]["seccion"],
+                    "docente": items[0]["docente"],
+                    "total_estudiantes": total,
+                    "promedio": round(sum(promedios) / len(promedios), 2) if promedios else None,
+                    "aprobados": aprobados,
+                    "desaprobados": desaprobados,
+                    "en_curso": en_curso,
+                })
+
+            todos_promedios = [i["promedio"] for i in grupo if i["promedio"] is not None]
+            cursos_result.append({
+                "curso_id": curso.id,
+                "curso": curso.nombre,
+                "semestre_num": curso.semestre_num,
+                "total_estudiantes": len(grupo),
+                "promedio": round(sum(todos_promedios) / len(todos_promedios), 2) if todos_promedios else None,
+                "secciones": secciones_result,
+            })
+
+        return {
+            "periodo": periodo.semestre if periodo else "",
+            "periodo_id": periodo_academico_id,
+            "cursos": cursos_result,
+        }
+
+    @staticmethod
+    def generar_reporte_record_academico_pdf(periodo_academico_id):
+        stats = EvaluacionService.record_academico_stats(periodo_academico_id)
+        periodo = PeriodoAcademico.query.get(periodo_academico_id)
+        periodo_label = periodo.semestre if periodo else ""
+
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        y = height - 2 * cm
+
+        c.setFont("Helvetica-Bold", 16)
+        c.drawCentredString(width / 2, y, "Reporte de Record Académico")
+        y -= 0.8 * cm
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(width / 2, y, "Universidad Nacional del Centro del Perú")
+        y -= 1.2 * cm
+
+        c.setFont("Helvetica", 10)
+        c.drawString(2 * cm, y, f"Periodo académico: {periodo_label}")
+        y -= 1 * cm
+
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(2 * cm, y, "Cursos y secciones")
+        y -= 0.7 * cm
+
+        for curso in stats["cursos"]:
+            if y < 4 * cm:
+                c.showPage()
+                y = height - 2 * cm
+
+            c.setFont("Helvetica-Bold", 11)
+            c.drawString(2 * cm, y, f"{curso['curso']} (Sem. {curso['semestre_num']})")
+            y -= 0.5 * cm
+            c.setFont("Helvetica", 9)
+            c.drawString(2 * cm, y, f"Promedio general: {curso['promedio'] if curso['promedio'] else '—'}  |  Total: {curso['total_estudiantes']}")
+            y -= 0.4 * cm
+
+            c.setFont("Helvetica-Bold", 9)
+            col_widths = [2 * cm, 4 * cm, 2.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm]
+            headers = ["Sección", "Docente", "Estudiantes", "Promedio", "Aprob.", "Desap.", "En curso"]
+            x_start = 3 * cm
+            for i, h in enumerate(headers):
+                c.drawString(x_start + sum(col_widths[:i]), y, h)
+            y -= 0.3 * cm
+            c.line(3 * cm, y, width - 2 * cm, y)
+            y -= 0.4 * cm
+
+            c.setFont("Helvetica", 8)
+            for sec in curso["secciones"]:
+                if y < 2 * cm:
+                    c.showPage()
+                    y = height - 2 * cm
+
+                vals = [
+                    sec["seccion"],
+                    sec["docente"],
+                    str(sec["total_estudiantes"]),
+                    str(sec["promedio"]) if sec["promedio"] else "—",
+                    str(sec["aprobados"]),
+                    str(sec["desaprobados"]),
+                    str(sec["en_curso"]),
+                ]
+                for i, v in enumerate(vals):
+                    text = v[:30] if len(v) > 30 else v
+                    c.drawString(x_start + sum(col_widths[:i]), y, text)
+                y -= 0.4 * cm
+            y -= 0.5 * cm
+
+        c.showPage()
+        c.save()
+        buffer.seek(0)
+        return buffer
+
+    @staticmethod
+    def generar_reporte_estadisticas_pdf(periodo_academico_id, curso_id=None, seccion_id=None, curso_nombre="", seccion_nombre=""):
+        stats = EvaluacionService.estadisticas_notas(
+            periodo_academico_id, curso_id=curso_id, seccion_id=seccion_id
+        )
+        periodo = PeriodoAcademico.query.get(periodo_academico_id)
+        periodo_label = periodo.semestre if periodo else ""
+
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        y = height - 2 * cm
+
+        c.setFont("Helvetica-Bold", 16)
+        c.drawCentredString(width / 2, y, "Reporte de Estadísticas de Notas")
+        y -= 0.8 * cm
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(width / 2, y, "Universidad Nacional del Centro del Perú")
+        y -= 1.2 * cm
+
+        c.setFont("Helvetica", 10)
+        c.drawString(2 * cm, y, f"Periodo académico: {periodo_label}")
+        y -= 0.5 * cm
+        if curso_nombre:
+            c.drawString(2 * cm, y, f"Curso: {curso_nombre}")
+            y -= 0.5 * cm
+        if seccion_nombre:
+            c.drawString(2 * cm, y, f"Sección: {seccion_nombre}")
+            y -= 0.5 * cm
+        y -= 0.5 * cm
+
+        resumen = stats["resumen"]
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(2 * cm, y, "Resumen")
+        y -= 0.7 * cm
+        c.setFont("Helvetica", 10)
+        c.drawString(2 * cm, y, f"Total estudiantes: {resumen['total_estudiantes']}")
+        y -= 0.5 * cm
+        pg = resumen["promedio_general"]
+        c.drawString(2 * cm, y, f"Promedio general: {pg if pg is not None else '—'}")
+        y -= 0.5 * cm
+        c.drawString(2 * cm, y, f"Aprobados: {resumen['aprobados']} ({resumen.get('aprobados_porcentaje', '—')}%)")
+        y -= 0.5 * cm
+        c.drawString(2 * cm, y, f"Desaprobados: {resumen['desaprobados']} ({resumen.get('desaprobados_porcentaje', '—')}%)")
+        y -= 0.5 * cm
+        y -= 0.5 * cm
+
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(2 * cm, y, "Distribución de notas")
+        y -= 0.7 * cm
+        c.setFont("Helvetica", 10)
+        distribucion = resumen.get("distribucion", {})
+        for rango in ["00-05", "05-10", "10-15", "15-20"]:
+            count = distribucion.get(rango, 0)
+            c.drawString(3 * cm, y, f"{rango}: {count} estudiantes")
+            y -= 0.5 * cm
+        y -= 0.5 * cm
+
+        detalle = stats.get("detalle", [])
+        if detalle:
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(2 * cm, y, "Detalle")
+            y -= 0.7 * cm
+
+            if seccion_id:
+                col_widths = [10 * cm, 3 * cm, 3 * cm]
+                headers = ["Estudiante", "Promedio", "Estado"]
+            elif curso_id:
+                col_widths = [3 * cm, 5 * cm, 3 * cm, 2 * cm, 2 * cm, 2 * cm]
+                headers = ["Sección", "Curso", "Docente", "Est.", "Prom.", "Aprob."]
+            else:
+                col_widths = [8 * cm, 3 * cm, 3 * cm, 3 * cm, 3 * cm]
+                headers = ["Curso", "Est.", "Prom.", "Aprob.", "Desap."]
+
+            c.setFont("Helvetica-Bold", 8)
+            x_start = 2 * cm
+            for i, h in enumerate(headers):
+                c.drawString(x_start + sum(col_widths[:i]), y, h)
+            y -= 0.3 * cm
+            c.line(2 * cm, y, width - 2 * cm, y)
+            y -= 0.4 * cm
+
+            c.setFont("Helvetica", 8)
+
+            if y < 3 * cm:
+                c.showPage()
+                y = height - 2 * cm
+                c.setFont("Helvetica-Bold", 8)
+                for i, h in enumerate(headers):
+                    c.drawString(x_start + sum(col_widths[:i]), y, h)
+                y -= 0.3 * cm
+                c.line(2 * cm, y, width - 2 * cm, y)
+                y -= 0.4 * cm
+                c.setFont("Helvetica", 8)
+
+            for row in detalle:
+                if y < 2 * cm:
+                    c.showPage()
+                    y = height - 2 * cm
+                    c.setFont("Helvetica-Bold", 8)
+                    for i, h in enumerate(headers):
+                        c.drawString(x_start + sum(col_widths[:i]), y, h)
+                    y -= 0.3 * cm
+                    c.line(2 * cm, y, width - 2 * cm, y)
+                    y -= 0.4 * cm
+                    c.setFont("Helvetica", 8)
+
+                if "estudiante" in row:
+                    vals = [
+                        row.get("estudiante", ""),
+                        str(row.get("promedio", "—")),
+                        row.get("estado", ""),
+                    ]
+                elif "seccion" in row:
+                    vals = [
+                        row.get("seccion", ""),
+                        row.get("curso", ""),
+                        row.get("docente", ""),
+                        str(row.get("total_estudiantes", "")),
+                        str(row.get("promedio", "—")),
+                        str(row.get("aprobados", "")),
+                    ]
+                else:
+                    vals = [
+                        row.get("curso", ""),
+                        str(row.get("total_estudiantes", "")),
+                        str(row.get("promedio", "—")),
+                        str(row.get("aprobados", "")),
+                        str(row.get("desaprobados", "")),
+                    ]
+
+                for i, v in enumerate(vals):
+                    text = v[:35] if len(v) > 35 else v
+                    c.drawString(x_start + sum(col_widths[:i]), y, text)
+                y -= 0.45 * cm
+
+        c.showPage()
+        c.save()
+        buffer.seek(0)
+        return buffer

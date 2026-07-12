@@ -83,6 +83,8 @@ class CursoNotasResponse(BaseModel):
     curso: str
     seccion: str
     promedio: Decimal | None = None
+    promedio_calculado: float | None = None
+    is_validated: bool = False
     evaluaciones: list[EvaluacionSimpleResponse]
 
 class NotasEstudianteListResponse(RootModel[list[CursoNotasResponse]]):
@@ -148,3 +150,29 @@ class EstadisticasNotasResponse(BaseModel):
     periodo_id: int
     resumen: ResumenStats
     detalle: list[DetalleStatsCurso | DetalleStatsSeccion | DetalleStatsEstudiante]
+
+
+class RecordSeccionStats(BaseModel):
+    seccion_id: int
+    seccion: str
+    docente: str
+    total_estudiantes: int
+    promedio: float | None = None
+    aprobados: int
+    desaprobados: int
+    en_curso: int
+
+
+class RecordCursoStats(BaseModel):
+    curso_id: int
+    curso: str
+    semestre_num: int
+    total_estudiantes: int
+    promedio: float | None = None
+    secciones: list[RecordSeccionStats]
+
+
+class RecordAcademicoStatsResponse(BaseModel):
+    periodo: str
+    periodo_id: int
+    cursos: list[RecordCursoStats]

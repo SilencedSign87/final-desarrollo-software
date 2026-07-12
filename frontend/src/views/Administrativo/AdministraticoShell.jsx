@@ -1,4 +1,4 @@
-import { FileText, LayoutDashboard, Shield, ClipboardList, BookOpen, GraduationCap, Layers, Table } from "lucide-react";
+import { FileText, LayoutDashboard, Shield, ClipboardList, BookOpen, GraduationCap, Layers, Table, ChartNoAxesCombined } from "lucide-react";
 import { Outlet } from "react-router-dom";
 import DashboardShell from "../../components/DashboardShell";
 import LogoutButton from "../../components/LogoutButton";
@@ -9,6 +9,7 @@ const routes = [
     { path: '/administrador/matricula', icon: ClipboardList, name: 'Matrícula' },
     { path: '/administrador/cursos', icon: BookOpen, name: 'Cursos' },
     { path: '/administrador/notas', icon: Table, name: 'Notas' },
+    { path: '/administrador/record-academico', icon: ChartNoAxesCombined, name: 'Record Académico' },
     { path: '/administrador/docentes', icon: GraduationCap, name: 'Docentes' },
     { path: '/administrador/secciones', icon: Layers, name: 'Secciones' },
     { path: '/administrador/documentos', icon: FileText, name: 'Documentos' },

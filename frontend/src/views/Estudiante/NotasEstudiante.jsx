@@ -4,6 +4,7 @@ import { PeriodoAcademicoService } from "../../services/periodoAcademicoService"
 import { EvaluacionService } from "../../services/evaluacionService"
 import Spinner from "../../components/Spinner"
 import Table from "../../components/Table"
+import { BadgeCheck, Clock } from "lucide-react"
 
 export default function NotasEstudiante() {
     const query = useQuery()
@@ -29,7 +30,13 @@ export default function NotasEstudiante() {
 
     const handleFetchPeriodosMatriculados = async () => {
         const response = await PeriodoAcademicoService.getPeriodosMatriculados()
-        setPeriodos(response.data)
+        const data = response.data
+        setPeriodos(data)
+
+        if (!periodo) {
+            const activo = data.find((p) => p.estado === "activo")
+            if (activo) query.set({ periodo: activo.id })
+        }
     }
     const handleFetchNotas = async () => {
         if (!periodo) return
@@ -39,19 +46,6 @@ export default function NotasEstudiante() {
 
 
         setIsLoading(false)
-    }
-
-    const CalcUnofficialPromedio = (nota) => {
-        if (!nota.evaluaciones || nota.evaluaciones.length === 0) {
-            return 0
-        }
-        let totalPeso = 0
-        let totalNota = 0
-        for (const evaluacion of nota.evaluaciones) {
-            totalPeso += evaluacion.peso
-            totalNota += evaluacion.nota * evaluacion.peso
-        }
-        return totalPeso > 0 ? (totalNota / totalPeso).toFixed(2) : 0
     }
 
     useEffect(() => {
@@ -123,17 +117,23 @@ export default function NotasEstudiante() {
                                             </Table>
                                         </div>
                                         <footer className="p-4 pt-1 pb-2 border-t text-sm border-neutral-300 flex items-center justify-between">
-                                            <div className="px-4 py-3 text-neutral-800 font-semibold flex flex-col gap-1" colSpan={2}>
+                                            <div className="px-4 py-3 text-neutral-800 font-semibold flex flex-col gap-1">
                                                 Promedio
-                                                <span className="text-neutral-400" title="La nota no ha sido revisada aún">
-                                                    {
-                                                        nota.promedio !== null
-                                                            ? 'Nota oficial'
-                                                            : 'La nota no ha sido revisada aún'
-                                                    }
-                                                </span>
+                                                {nota.is_validated ? (
+                                                    <span className="inline-flex items-center gap-1 text-xs text-green-700">
+                                                        <BadgeCheck size={14} />
+                                                        Nota oficial
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                                                        <Clock size={14} />
+                                                        Promedio calculado (no oficial)
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className="px-4 py-3 text-neutral-800 font-semibold">{nota.promedio ?? CalcUnofficialPromedio(nota)}</div>
+                                            <div className="px-4 py-3 text-neutral-800 font-semibold">
+                                                {nota.promedio ?? nota.promedio_calculado ?? "--"}
+                                            </div>
                                         </footer>
                                     </article>
                                 ))

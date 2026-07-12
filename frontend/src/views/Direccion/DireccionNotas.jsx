@@ -389,7 +389,7 @@ export default function DireccionNotas() {
 
 function StatCard({ label, value, className }) {
     return (
-        <div className="rounded-lg border border-neutral-200 bg-white p-4">
+        <div className="rounded-lg border border-neutral-300 bg-neutral-50 p-4">
             <p className="text-xs text-neutral-500 uppercase tracking-wider">{label}</p>
             <p className={twMerge("text-2xl font-bold mt-1", className)}>{value}</p>
         </div>

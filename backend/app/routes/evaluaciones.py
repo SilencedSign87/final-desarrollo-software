@@ -1,3 +1,4 @@
+from flask import send_file
 from flask_openapi3 import APIBlueprint, Tag
 from pydantic import BaseModel, Field
 from ..schemas.evaluacion_schema import (
@@ -14,6 +15,7 @@ from ..schemas.evaluacion_schema import (
     NotasEstudianteListResponse,
     RecordAcademicoResponse,
     EstadisticasNotasResponse,
+    RecordAcademicoStatsResponse,
 )
 from ..schemas.generic_schema import ErrorResponse
 from ..services.evaluacion_service import EvaluacionService, TipoEvaluacionService
@@ -315,6 +317,24 @@ def validar_promedio(path: SeccionPath, body: ValidarPromedioBody):
     return {"promedio_final": promedio, "message": "Promedio validado correctamente"}, 200
 
 
+@evaluaciones_bp.post(
+    "/seccion/<int:seccion_id>/validar-todos",
+    responses={
+        "200": {"description": "Todos los promedios validados"},
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+    },
+)
+def validar_todos_promedio(path: SeccionPath):
+    """Validar todos los promedios pendientes de una sección"""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "administrador":
+        return {"error": "No autorizado"}, 401
+
+    count = EvaluacionService.validar_todos_promedio(path.seccion_id)
+    return {"message": f"{count} promedio(s) validado(s)"}, 200
+
+
 @evaluaciones_bp.get(
     "/seccion/<int:seccion_id>/notas",
     responses={"200": NotasSeccionResponse, "404": ErrorResponse},
@@ -387,6 +407,57 @@ def estadisticas_notas_direccion(query: DireccionEstadisticasQuery):
     return stats, 200
 
 
+class ReporteEstadisticasQuery(DireccionEstadisticasQuery):
+    pass
+
+
+@evaluaciones_bp.get(
+    "/direccion/estadisticas/reporte",
+    responses={
+        "200": {"description": "Archivo PDF del reporte de estadísticas"},
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+    },
+)
+def reporte_estadisticas_notas(query: ReporteEstadisticasQuery):
+    """Descargar reporte PDF de estadísticas de notas."""
+    user = AuthService.get_current_user()
+    if not user or user.rol not in ("administrador", "direccion"):
+        return {"error": "No autorizado"}, 401
+
+    from ..models.curso import Curso
+    from ..models.seccion import Seccion
+
+    curso_nombre = ""
+    seccion_nombre = ""
+    if query.curso_id:
+        curso = Curso.query.get(query.curso_id)
+        if curso:
+            curso_nombre = curso.nombre
+    if query.seccion_id:
+        seccion = Seccion.query.get(query.seccion_id)
+        if seccion:
+            seccion_nombre = seccion.nombre
+
+    try:
+        buffer = EvaluacionService.generar_reporte_estadisticas_pdf(
+            periodo_academico_id=query.periodo_academico_id,
+            curso_id=query.curso_id,
+            seccion_id=query.seccion_id,
+            curso_nombre=curso_nombre,
+            seccion_nombre=seccion_nombre,
+        )
+    except Exception as e:
+        return {"error": str(e)}, 400
+
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="reporte_estadisticas_notas.pdf",
+    )
+
+
 @evaluaciones_bp.get(
     "/estudiante/record-academico",
     responses={
@@ -407,3 +478,56 @@ def record_academico():
 
     record = EvaluacionService.record_academico(estudiante.id)
     return record, 200
+
+
+class RecordAcademicoStatsQuery(BaseModel):
+    periodo_academico_id: int = Field(..., description="ID del periodo académico")
+
+
+@evaluaciones_bp.get(
+    "/direccion/record-academico",
+    responses={
+        "200": RecordAcademicoStatsResponse,
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+    },
+)
+def record_academico_stats_direccion(query: RecordAcademicoStatsQuery):
+    """Dirección consulta estadísticas de record académico por periodo."""
+    user = AuthService.get_current_user()
+    if not user or user.rol not in ("direccion", "administrador"):
+        return {"error": "No autorizado"}, 401
+
+    stats = EvaluacionService.record_academico_stats(
+        periodo_academico_id=query.periodo_academico_id,
+    )
+    return stats, 200
+
+
+@evaluaciones_bp.get(
+    "/direccion/record-academico/reporte",
+    responses={
+        "200": {"description": "Archivo PDF del reporte de record académico"},
+        "400": ErrorResponse,
+        "401": ErrorResponse,
+    },
+)
+def reporte_record_academico(query: RecordAcademicoStatsQuery):
+    """Descargar reporte PDF de record académico."""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "administrador":
+        return {"error": "No autorizado"}, 401
+
+    try:
+        buffer = EvaluacionService.generar_reporte_record_academico_pdf(
+            periodo_academico_id=query.periodo_academico_id,
+        )
+    except Exception as e:
+        return {"error": str(e)}, 400
+
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="reporte_record_academico.pdf",
+    )

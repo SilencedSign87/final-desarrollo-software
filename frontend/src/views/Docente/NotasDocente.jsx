@@ -44,7 +44,13 @@ export default function NotasDocente() {
     const handleLoadPeriodoAcademico = async () => {
         setPeriodosAcademicos(undefined)
         const response = await PeriodoAcademicoService.search()
-        setPeriodosAcademicos(response.data)
+        const data = response.data
+        setPeriodosAcademicos(data)
+
+        if (!periodoAcademico) {
+            const activo = data.find((p) => p.estado === "activo")
+            if (activo) query.set({ periodoAcademico: activo.id })
+        }
     }
 
     const handleLoadSeccionesAsignadas = async () => {
