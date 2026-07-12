@@ -299,3 +299,200 @@ class EvaluacionService:
             )
 
         return result
+
+    @staticmethod
+    def estadisticas_notas(periodo_academico_id, curso_id=None, seccion_id=None):
+        from ..models.docente import Docente
+        from ..models.user import User
+
+        query = (
+            db.session.query(
+                DetalleMatricula,
+                Seccion,
+                Curso,
+                Docente,
+                User,
+                Matricula,
+            )
+            .join(Seccion, Seccion.id == DetalleMatricula.seccion_id)
+            .join(Curso, Curso.id == Seccion.curso_id)
+            .join(Docente, Docente.id == Seccion.docente_id)
+            .join(User, User.id == Docente.user_id)
+            .join(Matricula, Matricula.id == DetalleMatricula.matricula_id)
+            .filter(Seccion.periodo_academico_id == periodo_academico_id)
+        )
+
+        if curso_id:
+            query = query.filter(Seccion.curso_id == curso_id)
+        if seccion_id:
+            query = query.filter(Seccion.id == seccion_id)
+
+        rows = query.all()
+        total = len(rows)
+        periodo = PeriodoAcademico.query.get(periodo_academico_id)
+
+        if not rows:
+            return {
+                "periodo": periodo.semestre if periodo else "",
+                "periodo_id": periodo_academico_id,
+                "resumen": {
+                    "total_estudiantes": 0,
+                    "promedio_general": None,
+                    "aprobados": 0,
+                    "aprobados_porcentaje": None,
+                    "desaprobados": 0,
+                    "desaprobados_porcentaje": None,
+                    "distribucion": {"00-05": 0, "05-10": 0, "10-15": 0, "15-20": 0},
+                },
+                "detalle": [],
+            }
+
+        promedios = []
+        aprobados = 0
+        distribucion = {"00-05": 0, "05-10": 0, "10-15": 0, "15-20": 0}
+
+        for detalle, _, _, _, _, _ in rows:
+            p = float(detalle.promedio_final) if detalle.promedio_final is not None else None
+            if p is not None:
+                promedios.append(p)
+                if p >= 10.5:
+                    aprobados += 1
+                if p < 5:
+                    distribucion["00-05"] += 1
+                elif p < 10:
+                    distribucion["05-10"] += 1
+                elif p < 15:
+                    distribucion["10-15"] += 1
+                else:
+                    distribucion["15-20"] += 1
+            else:
+                distribucion["00-05"] += 1
+
+        desaprobados = total - aprobados
+        promedio_general = round(sum(promedios) / len(promedios), 2) if promedios else None
+        aprobados_pct = round(aprobados / total * 100, 1) if total else None
+        desaprobados_pct = round(desaprobados / total * 100, 1) if total else None
+
+        resumen = {
+            "total_estudiantes": total,
+            "promedio_general": promedio_general,
+            "aprobados": aprobados,
+            "aprobados_porcentaje": aprobados_pct,
+            "desaprobados": desaprobados,
+            "desaprobados_porcentaje": desaprobados_pct,
+            "distribucion": distribucion,
+        }
+
+        if seccion_id:
+            detalle_result = []
+            for detalle, _, _, _, _, matricula in rows:
+                estudiante = matricula.estudiante
+                detalle_result.append({
+                    "estudiante_id": estudiante.id,
+                    "estudiante": f"{estudiante.user.nombres} {estudiante.user.apellidos}",
+                    "promedio": float(detalle.promedio_final) if detalle.promedio_final is not None else None,
+                    "estado": detalle.estado_curso,
+                })
+            detalle_result.sort(key=lambda x: x["promedio"] or 0, reverse=True)
+        elif curso_id:
+            from collections import defaultdict
+            grupos = defaultdict(lambda: {"seccion_id": None, "seccion": "", "curso": "", "docente": "", "total": 0, "promedios": [], "aprobados": 0})
+            for detalle, seccion, curso, _, user, _ in rows:
+                key = seccion.id
+                g = grupos[key]
+                g["seccion_id"] = seccion.id
+                g["seccion"] = seccion.nombre
+                g["curso"] = curso.nombre
+                g["docente"] = f"{user.nombres} {user.apellidos}"
+                g["total"] += 1
+                p = float(detalle.promedio_final) if detalle.promedio_final is not None else None
+                if p is not None:
+                    g["promedios"].append(p)
+                    if p >= 10.5:
+                        g["aprobados"] += 1
+            detalle_result = [
+                {
+                    "seccion_id": g["seccion_id"],
+                    "seccion": g["seccion"],
+                    "curso": g["curso"],
+                    "docente": g["docente"],
+                    "total_estudiantes": g["total"],
+                    "promedio": round(sum(g["promedios"]) / len(g["promedios"]), 2) if g["promedios"] else None,
+                    "aprobados": g["aprobados"],
+                    "desaprobados": g["total"] - g["aprobados"],
+                }
+                for g in sorted(grupos.values(), key=lambda x: x["seccion"])
+            ]
+        else:
+            from collections import defaultdict
+            grupos = defaultdict(lambda: {"curso_id": None, "curso": "", "total": 0, "promedios": [], "aprobados": 0})
+            for detalle, seccion, curso, _, _, _ in rows:
+                key = curso.id
+                g = grupos[key]
+                g["curso_id"] = curso.id
+                g["curso"] = curso.nombre
+                g["total"] += 1
+                p = float(detalle.promedio_final) if detalle.promedio_final is not None else None
+                if p is not None:
+                    g["promedios"].append(p)
+                    if p >= 10.5:
+                        g["aprobados"] += 1
+            detalle_result = [
+                {
+                    "curso_id": g["curso_id"],
+                    "curso": g["curso"],
+                    "total_estudiantes": g["total"],
+                    "promedio": round(sum(g["promedios"]) / len(g["promedios"]), 2) if g["promedios"] else None,
+                    "aprobados": g["aprobados"],
+                    "desaprobados": g["total"] - g["aprobados"],
+                }
+                for g in sorted(grupos.values(), key=lambda x: x["curso"])
+            ]
+
+        return {
+            "periodo": periodo.semestre if periodo else "",
+            "periodo_id": periodo_academico_id,
+            "resumen": resumen,
+            "detalle": detalle_result,
+        }
+
+    @staticmethod
+    def record_academico(id_estudiante):
+        matriculas = (
+            Matricula.query
+            .filter_by(estudiante_id=id_estudiante)
+            .order_by(Matricula.periodo_academico_id)
+            .all()
+        )
+
+        result = []
+        for matricula in matriculas:
+            detalles = (
+                db.session.query(DetalleMatricula, Seccion, Curso)
+                .join(Seccion, Seccion.id == DetalleMatricula.seccion_id)
+                .join(Curso, Curso.id == Seccion.curso_id)
+                .filter(DetalleMatricula.matricula_id == matricula.id)
+                .order_by(Curso.semestre_num)
+                .all()
+            )
+
+            if not detalles:
+                continue
+
+            cursos = []
+            for detalle, seccion, curso in detalles:
+                prerequisitos = [p.nombre for p in curso.prerequisitos]
+                cursos.append({
+                    "nombre": curso.nombre,
+                    "semestre_num": curso.semestre_num,
+                    "prerequisitos": prerequisitos,
+                    "promedio": float(detalle.promedio_final) if detalle.promedio_final else None,
+                })
+
+            result.append({
+                "periodo": matricula.periodo_academico.semestre,
+                "periodo_id": matricula.periodo_academico_id,
+                "cursos": cursos,
+            })
+
+        return result

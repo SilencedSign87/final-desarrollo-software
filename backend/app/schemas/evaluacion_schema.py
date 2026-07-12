@@ -87,3 +87,64 @@ class CursoNotasResponse(BaseModel):
 
 class NotasEstudianteListResponse(RootModel[list[CursoNotasResponse]]):
     pass
+
+
+class RecordCursoResponse(BaseModel):
+    nombre: str
+    semestre_num: int
+    prerequisitos: list[str]
+    promedio: float | None = None
+
+
+class RecordPeriodoResponse(BaseModel):
+    periodo: str
+    periodo_id: int
+    cursos: list[RecordCursoResponse]
+
+
+class RecordAcademicoResponse(RootModel[list[RecordPeriodoResponse]]):
+    pass
+
+
+class ResumenStats(BaseModel):
+    total_estudiantes: int
+    promedio_general: float | None = None
+    aprobados: int
+    aprobados_porcentaje: float | None = None
+    desaprobados: int
+    desaprobados_porcentaje: float | None = None
+    distribucion: dict[str, int]
+
+
+class DetalleStatsCurso(BaseModel):
+    curso_id: int
+    curso: str
+    total_estudiantes: int
+    promedio: float | None = None
+    aprobados: int
+    desaprobados: int
+
+
+class DetalleStatsSeccion(BaseModel):
+    seccion_id: int
+    seccion: str
+    curso: str
+    docente: str
+    total_estudiantes: int
+    promedio: float | None = None
+    aprobados: int
+    desaprobados: int
+
+
+class DetalleStatsEstudiante(BaseModel):
+    estudiante_id: int
+    estudiante: str
+    promedio: float | None = None
+    estado: str
+
+
+class EstadisticasNotasResponse(BaseModel):
+    periodo: str
+    periodo_id: int
+    resumen: ResumenStats
+    detalle: list[DetalleStatsCurso | DetalleStatsSeccion | DetalleStatsEstudiante]
