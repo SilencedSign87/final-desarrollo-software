@@ -1,19 +1,14 @@
-from sqlalchemy.orm import joinedload
 from ..extensions import db
 from ..models.docente import Docente
-from ..models.seccion import Seccion
 from ..models.user import User
+from ..models.seccion import Seccion
+from ..models.periodo_academico import PeriodoAcademico
 
 
 class DocenteService:
 
     @staticmethod
     def crear_docente(data):
-        """
-        Crea el perfil de Docente para un usuario ya registrado.
-        Lanza ValueError si el usuario no existe, si no tiene rol 'docente',
-        o si ya tiene un perfil de docente creado.
-        """
         user = User.query.get(data["user_id"])
         if not user:
             raise ValueError("El usuario no existe")
@@ -55,30 +50,31 @@ class DocenteService:
         return docente
 
     @staticmethod
-    def secciones_de_docente(docente_id, periodo_academico_id=None):
-        docente = Docente.query.options(
-            joinedload(Docente.secciones).joinedload(Seccion.curso)
-        ).get(docente_id)
+    def secciones_de_docente(docente_id):
+        docente = Docente.query.get(docente_id)
         if not docente:
             return None
-        secciones = docente.secciones
-        if periodo_academico_id:
-            secciones = [s for s in secciones if s.periodo_academico_id == periodo_academico_id]
-        return secciones
+        return docente.secciones
 
     @staticmethod
-    def carga_docente():
-        """
-        Para dirección: cuenta cuántas secciones tiene asignadas cada docente.
-        Devuelve una lista de dicts con el nombre completo del docente y su carga.
-        """
+    def carga_docente(periodo_academico_id=None):
+        if periodo_academico_id is None:
+            periodo_activo = PeriodoAcademico.query.filter_by(estado="activo").first()
+            periodo_academico_id = periodo_activo.id if periodo_activo else None
+
         docentes = Docente.query.all()
         resultado = []
         for docente in docentes:
+            if periodo_academico_id is not None:
+                total = Seccion.query.filter_by(
+                    docente_id=docente.id, periodo_academico_id=periodo_academico_id
+                ).count()
+            else:
+                total = len(docente.secciones)
             resultado.append({
                 "docente_id": docente.id,
                 "nombre_completo": f"{docente.user.nombres} {docente.user.apellidos}",
                 "categoria": docente.categoria,
-                "total_secciones": len(docente.secciones),
+                "total_secciones": total,
             })
         return resultado

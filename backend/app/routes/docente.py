@@ -20,10 +20,6 @@ class DocentePath(BaseModel):
     docente_id: int = Field(..., description="ID del docente")
 
 
-class SeccionesDocenteQuery(BaseModel):
-    periodo_academico_id: int | None = Field(None, description="Filtrar por periodo académico")
-
-
 def _to_response(docente):
     return DocenteResponse(
         id=docente.id,
@@ -37,7 +33,6 @@ def _seccion_to_response(seccion):
     return {
         "id": seccion.id,
         "curso_id": seccion.curso_id,
-        "curso_nombre": seccion.curso.nombre,
         "nombre": seccion.nombre,
         "periodo_academico_id": seccion.periodo_academico_id,
         "aforo": seccion.aforo,
@@ -126,7 +121,7 @@ def actualizar_docente(path: DocentePath, body: DocenteUpdate):
     "/<int:docente_id>/secciones",
     responses={"200": SeccionesDocenteListResponse, "401": ErrorResponse, "404": ErrorResponse},
 )
-def secciones_de_docente(path: DocentePath, query: SeccionesDocenteQuery):
+def secciones_de_docente(path: DocentePath):
     """Docente ve sus cursos/secciones asignados. También accesible por admin/dirección."""
     user = AuthService.get_current_user()
     if not user:
@@ -139,18 +134,22 @@ def secciones_de_docente(path: DocentePath, query: SeccionesDocenteQuery):
     if user.rol == "docente" and docente.user_id != user.id:
         return {"error": "No autorizado para ver estas secciones"}, 401
 
-    secciones = DocenteService.secciones_de_docente(path.docente_id, query.periodo_academico_id)
+    secciones = DocenteService.secciones_de_docente(path.docente_id)
     return [_seccion_to_response(s) for s in secciones], 200
+
+
+class CargaDocenteQuery(BaseModel):
+    periodo_academico_id: int | None = Field(None, description="Si no se indica, usa el periodo activo")
 
 
 @docente_bp.get(
     "/carga-docente",
     responses={"200": {"description": "Carga (número de secciones) por docente"}, "401": ErrorResponse},
 )
-def carga_docente():
-    """Dirección evalúa la carga docente (secciones asignadas por docente)"""
+def carga_docente(query: CargaDocenteQuery):
+    """Dirección evalúa la carga docente (secciones asignadas por docente en un periodo)"""
     user = AuthService.get_current_user()
     if not user or user.rol != "direccion":
         return {"error": "No autorizado"}, 401
 
-    return DocenteService.carga_docente(), 200
+    return DocenteService.carga_docente(query.periodo_academico_id), 200

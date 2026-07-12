@@ -2,16 +2,34 @@ import { useEffect, useState } from 'react'
 import { GraduationCap } from 'lucide-react'
 import Spinner from '../../components/spinner'
 import { DocenteService } from '../../services/docenteService'
+import { PeriodoAcademicoService } from '../../services/periodoAcademicoService'
 
 export default function DireccionCargaDocente() {
     const [carga, setCarga] = useState([])
+    const [periodos, setPeriodos] = useState([])
+    const [periodoId, setPeriodoId] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
 
     useEffect(() => {
         let active = true
+        PeriodoAcademicoService.search().then((response) => {
+            if (!active) return
+            const lista = response.data ?? []
+            setPeriodos(lista)
+            const activo = lista.find((p) => p.estado === 'activo')
+            setPeriodoId(activo ? String(activo.id) : '')
+        })
+        return () => {
+            active = false
+        }
+    }, [])
 
-        DocenteService.CargaDocente()
+    useEffect(() => {
+        let active = true
+        setIsLoading(true)
+
+        DocenteService.CargaDocente(periodoId || undefined)
             .then((response) => {
                 if (active) {
                     setCarga(response.data ?? [])
@@ -31,15 +49,27 @@ export default function DireccionCargaDocente() {
         return () => {
             active = false
         }
-    }, [])
+    }, [periodoId])
 
     return (
         <section className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-semibold text-slate-900">Carga docente</h2>
-                <p className="mt-1 text-sm text-neutral-600">
-                    Número de secciones asignadas por cada docente en el periodo actual.
-                </p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h2 className="text-2xl font-semibold text-slate-900">Carga docente</h2>
+                    <p className="mt-1 text-sm text-neutral-600">
+                        Número de secciones asignadas por cada docente en el periodo seleccionado.
+                    </p>
+                </div>
+                <label className="flex flex-col gap-1 text-sm">
+                    Periodo académico
+                    <select value={periodoId} onChange={(e) => setPeriodoId(e.target.value)}>
+                        {periodos.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                {p.semestre} {p.estado === 'activo' ? '(activo)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                </label>
             </div>
 
             {error && (

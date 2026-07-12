@@ -21,13 +21,11 @@ export const DocenteService = {
         return apiClient.put(`docentes/${docenteId}`, data)
     },
 
-    Secciones: async (docenteId, { periodo_academico_id } = {}) => {
-        return apiClient.get(`docentes/${docenteId}/secciones`, {
-            params: { periodo_academico_id }
-        })
+    Secciones: async (docenteId) => {
+        return apiClient.get(`docentes/${docenteId}/secciones`)
     },
 
-    CargaDocente: async () => {
-        return apiClient.get('docentes/carga-docente')
+    CargaDocente: async (periodo_academico_id) => {
+        return apiClient.get('docentes/carga-docente', { params: { periodo_academico_id } })
     },
 }
