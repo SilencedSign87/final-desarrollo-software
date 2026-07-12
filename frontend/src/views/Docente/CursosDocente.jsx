@@ -2,21 +2,26 @@ import { useEffect, useState } from 'react'
 import { BookOpen } from 'lucide-react'
 import Spinner from '../../components/spinner'
 import { DocenteService } from '../../services/docenteService'
+import { PeriodoAcademicoService } from '../../services/periodoAcademicoService'
 
 export default function CursosDocente() {
     const [secciones, setSecciones] = useState([])
+    const [periodos, setPeriodos] = useState([])
+    const [periodoId, setPeriodoId] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
 
     useEffect(() => {
         let active = true
 
-        DocenteService.Me()
-            .then((response) => DocenteService.Secciones(response.data.id))
-            .then((response) => {
-                if (active) {
-                    setSecciones(response.data ?? [])
-                }
+        Promise.all([
+            DocenteService.Me().then((response) => DocenteService.Secciones(response.data.id)),
+            PeriodoAcademicoService.search(),
+        ])
+            .then(([seccionesRes, periodosRes]) => {
+                if (!active) return
+                setSecciones(seccionesRes.data ?? [])
+                setPeriodos(periodosRes.data ?? [])
             })
             .catch((requestError) => {
                 if (active) {
@@ -34,13 +39,28 @@ export default function CursosDocente() {
         }
     }, [])
 
+    const seccionesFiltradas = periodoId
+        ? secciones.filter((s) => String(s.periodo_academico_id) === String(periodoId))
+        : secciones
+
     return (
         <section className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-semibold text-slate-900">Mis cursos</h2>
-                <p className="mt-1 text-sm text-neutral-600">
-                    Cursos y secciones que tienes asignados este periodo.
-                </p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h2 className="text-2xl font-semibold text-slate-900">Mis cursos</h2>
+                    <p className="mt-1 text-sm text-neutral-600">
+                        Cursos y secciones que tienes asignados.
+                    </p>
+                </div>
+                <label className="flex flex-col gap-1 text-sm">
+                    Periodo académico
+                    <select value={periodoId} onChange={(e) => setPeriodoId(e.target.value)}>
+                        <option value="">Todos</option>
+                        {periodos.map((p) => (
+                            <option key={p.id} value={p.id}>{p.semestre}</option>
+                        ))}
+                    </select>
+                </label>
             </div>
 
             {error && (
@@ -53,13 +73,13 @@ export default function CursosDocente() {
                 <div className="flex justify-center py-10">
                     <Spinner />
                 </div>
-            ) : !secciones.length ? (
+            ) : !seccionesFiltradas.length ? (
                 <p className="rounded-lg border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500">
-                    No tienes cursos asignados este periodo.
+                    No tienes cursos asignados {periodoId ? 'en este periodo' : ''}.
                 </p>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {secciones.map((seccion) => (
+                    {seccionesFiltradas.map((seccion) => (
                         <article key={seccion.id} className="rounded-lg border border-neutral-300 bg-neutral-50 p-5">
                             <div className="mb-2 flex items-center gap-2 text-neutral-500">
                                 <BookOpen className="h-4 w-4" />

@@ -7,11 +7,22 @@ from werkzeug.utils import secure_filename
 ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
+SILABO_ALLOWED_EXTENSIONS = {"pdf"}
+SILABO_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
 
 class FileService:
     @staticmethod
     def _comprobantes_dir() -> Path:
         folder = Path(current_app.config["COMPROBANTES_FOLDER"])
+        if not folder.is_absolute():
+            folder = Path(current_app.root_path).parent / folder
+        folder.mkdir(parents=True, exist_ok=True)
+        return folder
+
+    @staticmethod
+    def _silabos_dir() -> Path:
+        folder = Path(current_app.config["SILABOS_FOLDER"])
         if not folder.is_absolute():
             folder = Path(current_app.root_path).parent / folder
         folder.mkdir(parents=True, exist_ok=True)
@@ -60,6 +71,41 @@ class FileService:
         if stored_name.startswith("http") or stored_name.startswith("/api/"):
             return None
         path = cls._comprobantes_dir() / Path(stored_name).name
+        return path if path.exists() else None
+
+    @classmethod
+    def validate_silabo(cls, file_storage):
+        if file_storage is None or not file_storage.filename:
+            raise ValueError("Debes adjuntar el sílabo en PDF")
+
+        ext = cls._extension(file_storage.filename)
+        if ext not in SILABO_ALLOWED_EXTENSIONS:
+            raise ValueError("El sílabo debe subirse en formato PDF")
+
+        file_storage.stream.seek(0, 2)
+        size = file_storage.stream.tell()
+        file_storage.stream.seek(0)
+        if size > SILABO_MAX_FILE_SIZE:
+            raise ValueError("El sílabo no puede superar los 10 MB")
+
+        return ext
+
+    @classmethod
+    def save_silabo(cls, file_storage, prefix: str) -> str:
+        ext = cls.validate_silabo(file_storage)
+        safe_prefix = secure_filename(prefix) or "silabo"
+        filename = f"{safe_prefix}-{uuid.uuid4().hex[:12]}.{ext}"
+        path = cls._silabos_dir() / filename
+        file_storage.save(path)
+        return filename
+
+    @classmethod
+    def get_silabo_path(cls, stored_name: str) -> Path | None:
+        if not stored_name:
+            return None
+        if stored_name.startswith("http") or stored_name.startswith("/api/"):
+            return None
+        path = cls._silabos_dir() / Path(stored_name).name
         return path if path.exists() else None
 
     @staticmethod

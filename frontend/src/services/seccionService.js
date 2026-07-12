@@ -23,8 +23,20 @@ export const SeccionService = {
         return apiClient.put(`secciones/${seccionId}`, data)
     },
 
-    UploadSilabo: async (seccionId, silabo_url) => {
-        return apiClient.put(`secciones/${seccionId}/silabo`, { silabo_url })
+    UploadSilabo: async (seccionId, file) => {
+        const formData = new FormData()
+        formData.append('silabo', file)
+        return apiClient.put(`secciones/${seccionId}/silabo`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        })
+    },
+
+    VerSilabo: async (seccionId) => {
+        const response = await apiClient.get(`secciones/${seccionId}/silabo`, {
+            responseType: 'blob',
+        })
+        const blobUrl = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+        window.open(blobUrl, '_blank')
     },
 
     Delete: async (seccionId) => {

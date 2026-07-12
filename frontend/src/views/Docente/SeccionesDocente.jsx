@@ -5,17 +5,20 @@ import Spinner from '../../components/spinner'
 import { DocenteService } from '../../services/docenteService'
 import { SeccionService } from '../../services/seccionService'
 import { HorarioService } from '../../services/horarioService'
+import { PeriodoAcademicoService } from '../../services/periodoAcademicoService'
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 export default function SeccionesDocente() {
     const [secciones, setSecciones] = useState([])
+    const [periodos, setPeriodos] = useState([])
+    const [periodoId, setPeriodoId] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
 
     const [silaboDialogOpen, setSilaboDialogOpen] = useState(false)
     const [silaboSeccion, setSilaboSeccion] = useState(null)
-    const [silaboUrl, setSilaboUrl] = useState('')
+    const [silaboFile, setSilaboFile] = useState(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const [horarioDialogOpen, setHorarioDialogOpen] = useState(false)
@@ -39,10 +42,14 @@ export default function SeccionesDocente() {
     useEffect(() => {
         let active = true
 
-        DocenteService.Me()
-            .then((response) => DocenteService.Secciones(response.data.id))
-            .then((response) => {
-                if (active) setSecciones(response.data ?? [])
+        Promise.all([
+            DocenteService.Me().then((response) => DocenteService.Secciones(response.data.id)),
+            PeriodoAcademicoService.search(),
+        ])
+            .then(([seccionesRes, periodosRes]) => {
+                if (!active) return
+                setSecciones(seccionesRes.data ?? [])
+                setPeriodos(periodosRes.data ?? [])
             })
             .catch((requestError) => {
                 if (active) setError(requestError.response?.data?.error ?? 'No se pudieron cargar tus secciones')
@@ -56,18 +63,27 @@ export default function SeccionesDocente() {
         }
     }, [])
 
+    const seccionesFiltradas = periodoId
+        ? secciones.filter((s) => String(s.periodo_academico_id) === String(periodoId))
+        : secciones
+
     const openSilabo = (seccion) => {
         setSilaboSeccion(seccion)
-        setSilaboUrl(seccion.silabo_url ?? '')
+        setSilaboFile(null)
+        setError(null)
         setSilaboDialogOpen(true)
     }
 
     const handleSubmitSilabo = async (event) => {
         event.preventDefault()
+        if (!silaboFile) {
+            setError('Debes seleccionar un archivo PDF')
+            return
+        }
         setIsSubmitting(true)
         setError(null)
         try {
-            await SeccionService.UploadSilabo(silaboSeccion.id, silaboUrl)
+            await SeccionService.UploadSilabo(silaboSeccion.id, silaboFile)
             setSilaboDialogOpen(false)
             await reload()
         } catch (requestError) {
@@ -90,11 +106,22 @@ export default function SeccionesDocente() {
 
     return (
         <section className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-semibold text-slate-900">Mis secciones</h2>
-                <p className="mt-1 text-sm text-neutral-600">
-                    Sube el sílabo de tus cursos y consulta tus horarios asignados.
-                </p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h2 className="text-2xl font-semibold text-slate-900">Mis secciones</h2>
+                    <p className="mt-1 text-sm text-neutral-600">
+                        Sube el sílabo de tus cursos y consulta tus horarios asignados.
+                    </p>
+                </div>
+                <label className="flex flex-col gap-1 text-sm">
+                    Periodo académico
+                    <select value={periodoId} onChange={(e) => setPeriodoId(e.target.value)}>
+                        <option value="">Todos</option>
+                        {periodos.map((p) => (
+                            <option key={p.id} value={p.id}>{p.semestre}</option>
+                        ))}
+                    </select>
+                </label>
             </div>
 
             {error && (
@@ -113,9 +140,9 @@ export default function SeccionesDocente() {
                     <div className="flex justify-center py-10">
                         <Spinner />
                     </div>
-                ) : !secciones.length ? (
+                ) : !seccionesFiltradas.length ? (
                     <p className="rounded-lg border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500">
-                        No tienes secciones asignadas.
+                        No tienes secciones asignadas {periodoId ? 'en este periodo' : ''}.
                     </p>
                 ) : (
                     <div className="overflow-x-auto rounded-lg border border-neutral-300">
@@ -130,16 +157,20 @@ export default function SeccionesDocente() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-200 bg-white">
-                                {secciones.map((seccion) => (
+                                {seccionesFiltradas.map((seccion) => (
                                     <tr key={seccion.id}>
                                         <td className="px-4 py-3 text-neutral-900">{seccion.curso_nombre}</td>
                                         <td className="px-4 py-3 text-neutral-700">{seccion.nombre}</td>
                                         <td className="px-4 py-3 text-neutral-700">{seccion.periodo_semestre}</td>
                                         <td className="px-4 py-3">
                                             {seccion.silabo_url ? (
-                                                <a href={seccion.silabo_url} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => SeccionService.VerSilabo(seccion.id)}
+                                                    className="text-blue-700 hover:underline"
+                                                >
                                                     Ver sílabo
-                                                </a>
+                                                </button>
                                             ) : (
                                                 <span className="text-xs text-neutral-500">Sin sílabo</span>
                                             )}
@@ -168,11 +199,33 @@ export default function SeccionesDocente() {
                 <Dialog.Surface>
                     <Dialog.Header>Subir sílabo — {silaboSeccion?.nombre}</Dialog.Header>
                     <Dialog.Content>
+                        {error && (
+                            <p className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                                {error}
+                            </p>
+                        )}
                         <form id="silabo-docente-form" onSubmit={handleSubmitSilabo}>
                             <label className="flex flex-col gap-2 text-sm">
-                                URL del sílabo
-                                <input type="text" placeholder="https://..." value={silaboUrl} onChange={(event) => setSilaboUrl(event.target.value)} required />
+                                Archivo PDF del sílabo
+                                <input
+                                    type="file"
+                                    accept="application/pdf"
+                                    onChange={(event) => setSilaboFile(event.target.files?.[0] ?? null)}
+                                    required
+                                />
                             </label>
+                            {silaboSeccion?.silabo_url && (
+                                <p className="mt-2 text-xs text-neutral-500">
+                                    Ya existe un sílabo subido —{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => SeccionService.VerSilabo(silaboSeccion.id)}
+                                        className="text-blue-700 hover:underline"
+                                    >
+                                        verlo aquí
+                                    </button>. Subir un nuevo archivo lo reemplaza.
+                                </p>
+                            )}
                         </form>
                     </Dialog.Content>
                     <Dialog.Footer>
