@@ -1,7 +1,13 @@
 import { apiClient } from "./api"
 
-export const getDocumentRequests = async () => {
-    return apiClient.get('/documentos/solicitudes')
+export const getDocumentRequests = async ({ page = 1, per_page = 10, estado } = {}) => {
+    return apiClient.get('/documentos/solicitudes', {
+        params: {
+            page,
+            per_page,
+            ...(estado ? { estado } : {}),
+        },
+    })
 }
 
 export const createDocumentRequest = async ({ tipo_documento_id, tipo_documento, comprobante }) => {

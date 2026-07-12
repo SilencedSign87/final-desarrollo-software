@@ -12,13 +12,16 @@ from ..models.solicitud_documento import SolicitudDocumento
 from ..schemas.document_schema import (
     DocumentoAutorizar,
     DocumentoVerificacionResponse,
+    PaginationMeta,
     QrVerificacionPath,
     SolicitudDocumentoPath,
+    SolicitudDocumentoQuery,
     SolicitudDocumentoResponse,
 )
 from ..schemas.generic_schema import ErrorResponse
 from ..services.document_service import DocumentService
 from ..services.file_service import FileService
+from ..services.signature_service import SignatureService
 from ..services.tipo_documento_service import TipoDocumentoService
 
 documents_tag = Tag(
@@ -40,11 +43,14 @@ def _comprobante_public_url(solicitud):
 def _serialize_solicitud(solicitud):
     return SolicitudDocumentoResponse(
         id=solicitud.id,
+        codigo_ticket=solicitud.codigo_ticket,
         estudiante_id=solicitud.estudiante_id,
         tipo_documento_id=solicitud.tipo_documento_id,
         tipo_documento=solicitud.tipo_documento,
         estado=solicitud.estado,
+        observacion=solicitud.observacion,
         qr_hash=solicitud.qr_hash,
+        firma_digital=solicitud.firma_digital,
         archivo_url=solicitud.archivo_url,
         comprobante_url=_comprobante_public_url(solicitud),
         requiere_pago=bool(solicitud.requiere_pago),
@@ -75,21 +81,37 @@ def _can_access_document(user, solicitud) -> bool:
 
 @documents_bp.get(
     "/solicitudes",
-    responses={"200": {"description": "Listado de solicitudes"}, "401": ErrorResponse},
+    responses={"200": {"description": "Listado paginado de solicitudes"}, "401": ErrorResponse},
 )
 @auth_required
-def list_document_requests():
-    """Listar solicitudes de documentos segun el rol autenticado."""
+def list_document_requests(query: SolicitudDocumentoQuery):
+    """Listar solicitudes de documentos con filtros y paginación."""
     user = g.current_user
 
-    query = SolicitudDocumento.query
+    base_query = SolicitudDocumento.query
     if user.rol == "estudiante":
         if not user.estudiante:
             return {"error": "El usuario no tiene perfil de estudiante"}, 400
-        query = query.filter_by(estudiante_id=user.estudiante.id)
+        base_query = base_query.filter_by(estudiante_id=user.estudiante.id)
 
-    solicitudes = query.order_by(SolicitudDocumento.id.desc()).all()
-    return {"data": [_serialize_solicitud(solicitud) for solicitud in solicitudes]}, 200
+    if query.estado:
+        base_query = base_query.filter_by(estado=query.estado)
+
+    pagination = base_query.order_by(SolicitudDocumento.id.desc()).paginate(
+        page=query.page,
+        per_page=query.per_page,
+        error_out=False,
+    )
+
+    return {
+        "data": [_serialize_solicitud(solicitud) for solicitud in pagination.items],
+        "meta": PaginationMeta(
+            page=pagination.page,
+            per_page=pagination.per_page,
+            total=pagination.total,
+            pages=pagination.pages,
+        ).model_dump(),
+    }, 200
 
 
 @documents_bp.post(
@@ -129,7 +151,6 @@ def create_document_request():
     elif tipo_nombre:
         tipo = TipoDocumentoService.obtener_por_nombre(tipo_nombre)
         if not tipo:
-            # Compatibilidad: nombre libre fuera del catálogo (sin pago)
             tipo_nombre_final = tipo_nombre
             requiere_pago = False
             tipo_documento_id = None
@@ -160,13 +181,15 @@ def create_document_request():
         except ValueError as e:
             return {"error": str(e)}, 400
 
+    fecha_creacion = datetime.now(timezone.utc)
     solicitud = SolicitudDocumento(
         estudiante_id=user.estudiante.id,
         tipo_documento_id=tipo_documento_id,
         tipo_documento=tipo_nombre_final,
+        codigo_ticket=DocumentService.generate_ticket_code(fecha_creacion),
         estado="pendiente_autorizacion",
         requiere_pago=requiere_pago,
-        fecha_creacion=datetime.now(timezone.utc),
+        fecha_creacion=fecha_creacion,
     )
     db.session.add(solicitud)
     db.session.flush()
@@ -193,7 +216,18 @@ def authorize_document_request(path: SolicitudDocumentoPath, body: DocumentoAuto
     if not solicitud:
         return {"error": "Solicitud no encontrada"}, 404
 
-    solicitud.estado = "autorizado" if body.aprobado else "rechazado"
+    if solicitud.estado != "pendiente_autorizacion":
+        return {"error": "Solo se pueden revisar solicitudes pendientes de autorización"}, 400
+
+    if body.aprobado:
+        solicitud.estado = "autorizado"
+        solicitud.observacion = body.observacion.strip() if body.observacion else None
+    else:
+        solicitud.estado = "rechazado"
+        solicitud.observacion = body.observacion.strip()
+
+    solicitud.respondido_por_user_id = g.current_user.id
+    solicitud.fecha_respuesta = datetime.now(timezone.utc)
     db.session.commit()
 
     return _serialize_solicitud(solicitud), 200
@@ -205,7 +239,7 @@ def authorize_document_request(path: SolicitudDocumentoPath, body: DocumentoAuto
 )
 @roles_required("administrador")
 def issue_document(path: SolicitudDocumentoPath):
-    """Emitir certificados con PDF y codigo QR generados automaticamente."""
+    """Emitir certificados con PDF, firma digital y codigo QR."""
     solicitud = _get_solicitud_with_relations(path.solicitud_id)
     if not solicitud:
         return {"error": "Solicitud no encontrada"}, 404
@@ -214,13 +248,18 @@ def issue_document(path: SolicitudDocumentoPath):
         return {"error": "La solicitud debe estar autorizada antes de emitirse"}, 400
 
     try:
-        archivo_url, qr_hash = DocumentService.generate_document(solicitud)
+        archivo_url, qr_hash, firma_info = DocumentService.generate_document(solicitud)
     except Exception:
         return {"error": "No se pudo generar el documento PDF"}, 500
 
     solicitud.estado = "emitido"
     solicitud.archivo_url = archivo_url
     solicitud.qr_hash = qr_hash
+    solicitud.firma_digital = firma_info["firma_digital"]
+    solicitud.firma_algoritmo = firma_info["firma_algoritmo"]
+    solicitud.firma_huella_cert = firma_info["firma_huella_cert"]
+    solicitud.contenido_hash = firma_info["contenido_hash"]
+    solicitud.fecha_emision = datetime.now(timezone.utc)
     db.session.commit()
 
     return _serialize_solicitud(solicitud), 200
@@ -248,11 +287,12 @@ def download_document_file(path: SolicitudDocumentoPath):
     if not pdf_path:
         return {"error": "Archivo no encontrado"}, 404
 
+    ticket = solicitud.codigo_ticket or str(solicitud.id)
     return send_file(
         pdf_path,
         mimetype="application/pdf",
         as_attachment=True,
-        download_name=f"{solicitud.tipo_documento.replace(' ', '_')}-{solicitud.id}.pdf",
+        download_name=f"{solicitud.tipo_documento.replace(' ', '_')}-{ticket}.pdf",
     )
 
 
@@ -313,16 +353,27 @@ def verify_document(path: QrVerificacionPath):
             404,
         )
 
+    firma_valida = SignatureService.verify_signature(
+        solicitud,
+        solicitud.qr_hash,
+        solicitud.firma_digital,
+    )
     estudiante = solicitud.estudiante.user
     return (
         DocumentoVerificacionResponse(
             valido=True,
             solicitud_id=solicitud.id,
+            codigo_ticket=solicitud.codigo_ticket,
             tipo_documento=solicitud.tipo_documento,
             estudiante=f"{estudiante.nombres} {estudiante.apellidos}",
             estado=solicitud.estado,
-            fecha_emision=solicitud.fecha_creacion,
-            mensaje="Documento valido y emitido por el sistema",
+            fecha_emision=solicitud.fecha_emision or solicitud.fecha_creacion,
+            firma_valida=firma_valida,
+            mensaje=(
+                "Documento valido y emitido por el sistema"
+                if firma_valida
+                else "Documento encontrado, pero la firma digital no es valida"
+            ),
         ).model_dump(),
         200,
     )
