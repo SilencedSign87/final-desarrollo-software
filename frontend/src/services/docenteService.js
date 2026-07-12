@@ -21,8 +21,10 @@ export const DocenteService = {
         return apiClient.put(`docentes/${docenteId}`, data)
     },
 
-    Secciones: async (docenteId) => {
-        return apiClient.get(`docentes/${docenteId}/secciones`)
+    Secciones: async (docenteId, { periodo_academico_id } = {}) => {
+        return apiClient.get(`docentes/${docenteId}/secciones`, {
+            params: { periodo_academico_id }
+        })
     },
 
     CargaDocente: async () => {

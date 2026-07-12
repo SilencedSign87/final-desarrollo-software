@@ -1,5 +1,7 @@
+from sqlalchemy.orm import joinedload
 from ..extensions import db
 from ..models.docente import Docente
+from ..models.seccion import Seccion
 from ..models.user import User
 
 
@@ -53,11 +55,16 @@ class DocenteService:
         return docente
 
     @staticmethod
-    def secciones_de_docente(docente_id):
-        docente = Docente.query.get(docente_id)
+    def secciones_de_docente(docente_id, periodo_academico_id=None):
+        docente = Docente.query.options(
+            joinedload(Docente.secciones).joinedload(Seccion.curso)
+        ).get(docente_id)
         if not docente:
             return None
-        return docente.secciones
+        secciones = docente.secciones
+        if periodo_academico_id:
+            secciones = [s for s in secciones if s.periodo_academico_id == periodo_academico_id]
+        return secciones
 
     @staticmethod
     def carga_docente():

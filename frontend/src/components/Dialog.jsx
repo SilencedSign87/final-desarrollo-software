@@ -27,7 +27,7 @@ const backdropVariants = cva(
 const dialogPanelVariants = cva(
     [
         'fixed z-100 bg-white  rounded-lg starting:scale-110 starting:opacity-0',
-        'grid grid-rows-[1fr_auto] grid-cols-1',
+        'grid grid-rows-[auto_1fr_auto] grid-cols-1',
         'border border-neutral-400 ',
         'transition-all',
         'max-h-[90vh] w-fit max-w-[95vw]',
@@ -141,7 +141,7 @@ Dialog.Surface = ({ children, className, backdropClassName }) => {
 
 Dialog.Header = ({ children, className }) => {
     return (
-        <header className={twMerge("p-6 pb-4 text-xl font-semibold", className)}>
+        <header className={twMerge(" p-6 pb-4 text-xl font-semibold", className)}>
             {children}
         </header>
     )
@@ -149,7 +149,7 @@ Dialog.Header = ({ children, className }) => {
 
 Dialog.Content = ({ children, className }) => {
     return (
-        <div className={twMerge("overflow-y-auto px-6 pb-4 text-sm", className)}>
+        <div className={twMerge("h-full w-full overflow-y-auto overflow-x-hidden px-6 pb-4 text-sm", className)}>
             {children}
         </div>
     )
@@ -159,7 +159,7 @@ Dialog.Footer = ({ children, className, showCloseButton, closeButtonChildren, bu
     const ctx = useContext(DialogContext);
     if (!ctx) throw new Error("Dialog.Footer must be used within a Dialog");
     return (
-        <footer className={twMerge("flex flex-wrap items-center justify-end gap-2 p-4 pt-0 bg-white/85 key-shadow border-l-0 border-r-0 border-b-0 rounded-b-lg", className)}>
+        <footer className={twMerge(" flex flex-wrap items-center justify-end gap-2 p-4 pt-0 border-l-0 border-r-0 border-b-0 rounded-b-lg", className)}>
             {children}
             {showCloseButton && (
                 <button

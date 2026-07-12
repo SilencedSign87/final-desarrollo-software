@@ -12,6 +12,7 @@ class DocenteUpdate(BaseModel):
 class SeccionAsignadaResponse(BaseModel):
     id: int
     curso_id: int
+    curso_nombre: str
     nombre: str
     periodo_academico_id: int
     aforo: int

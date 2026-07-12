@@ -87,7 +87,9 @@ function App() {
             <Route path="docentes" element={<AdministrativoDocentes />} />
             <Route path="secciones" element={<AdministrativoSecciones />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
+            <Route path="notas" element={<NotasAdministrativo />} />
             <Route path="seguridad" element={<AdministrativoSeguridad />} />
+            
           </Route>
 
           {/* Director */}

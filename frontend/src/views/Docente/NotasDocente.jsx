@@ -3,22 +3,22 @@ import { useQuery } from "../../hooks/useQuery"
 import { twMerge } from "tailwind-merge"
 import { useEffect, useState } from "react"
 import { PeriodoAcademicoService } from "../../services/periodoAcademicoService"
-import { SeccionService } from "../../services/seccionService"
+import { DocenteService } from "../../services/docenteService"
 import { EvaluacionService } from "../../services/evaluacionService"
 import Skeleton from "../../components/Skeleton"
 import { Delete, Edit, Info, Plus, Trash } from "lucide-react"
 import EditableText from "../../components/EditableText"
 import Dialog from "../../components/Dialog"
+import Table from "../../components/Table"
 
 export default function NotasDocente() {
     const query = useQuery('docente_notas')
     const periodoAcademico = query.params.periodoAcademico || ''
-    const curso = query.params.curso || ''
     const seccion = query.params.seccion || ''
 
     const [periodosAcademicos, setPeriodosAcademicos] = useState()
-    const [cursos, setCursos] = useState()
-    const [secciones, setSecciones] = useState()
+    const [seccionesAsignadas, setSeccionesAsignadas] = useState()
+    const [docenteId, setDocenteId] = useState()
     const [notasSeccion, setNotaSeccion] = useState()
 
     const handleChange = (key) => (event) => {
@@ -27,14 +27,8 @@ export default function NotasDocente() {
         const record = { [key]: value }
 
         if (key === 'periodoAcademico') {
-            record.curso = ''
             record.seccion = ''
-            setCursos(undefined)
-            setSecciones(undefined)
-            setNotaSeccion(undefined)
-        } else if (key === 'curso') {
-            record.seccion = ''
-            setSecciones(undefined)
+            setSeccionesAsignadas(undefined)
             setNotaSeccion(undefined)
         } else if (key === 'seccion') {
             setNotaSeccion(undefined)
@@ -53,18 +47,19 @@ export default function NotasDocente() {
         setPeriodosAcademicos(response.data)
     }
 
-    const handleLoadCursos = async () => {
+    const handleLoadSeccionesAsignadas = async () => {
         if (!periodoAcademico) return
-        setCursos(undefined)
-        const response = await PeriodoAcademicoService.getCursosByPeriodoAcademico(periodoAcademico)
-        setCursos(response.data)
-    }
+        setSeccionesAsignadas(undefined)
 
-    const handleLoadSecciones = async () => {
-        if (!curso) return
-        setSecciones(undefined)
-        const response = await SeccionService.Search({ curso_id: curso })
-        setSecciones(response.data)
+        let id = docenteId
+        if (!id) {
+            const meResponse = await DocenteService.Me()
+            id = meResponse.data.id
+            setDocenteId(id)
+        }
+
+        const response = await DocenteService.Secciones(id, { periodo_academico_id: periodoAcademico })
+        setSeccionesAsignadas(response.data)
     }
 
     const handleFetchEstudiantes = async () => {
@@ -105,22 +100,12 @@ export default function NotasDocente() {
 
     useEffect(() => {
         if (!periodoAcademico) {
-            setCursos(undefined)
-            setSecciones(undefined)
+            setSeccionesAsignadas(undefined)
             setNotaSeccion(undefined)
             return
         }
-        handleLoadCursos()
+        handleLoadSeccionesAsignadas()
     }, [periodoAcademico])
-
-    useEffect(() => {
-        if (!curso) {
-            setSecciones(undefined)
-            setNotaSeccion(undefined)
-            return
-        }
-        handleLoadSecciones()
-    }, [curso])
 
     useEffect(() => {
         if (!seccion) {
@@ -157,42 +142,20 @@ export default function NotasDocente() {
                         </label>
 
                         <label className={`flex flex-col items-start justify-center gap-1 ${!periodoAcademico ? 'hidden' : ''}`} >
-                            Curso
+                            Curso - Sección
                             {
-                                cursos === undefined
+                                seccionesAsignadas === undefined
                                     ? renderSkeleton()
                                     : (
-
                                         <select
                                             disabled={!periodoAcademico}
-                                            className="w-full"
-                                            value={curso}
-                                            onChange={handleChange('curso')}>
-                                            <option value=""> -- </option>
-                                            {
-                                                cursos.map((curso) => (
-                                                    <option key={curso.id} value={curso.id}>{curso.nombre}</option>
-                                                ))
-                                            }
-                                        </select>
-                                    )
-                            }
-                        </label>
-                        <label className={`flex flex-col items-start justify-center gap-1 ${!curso ? 'hidden' : ''}`} >
-                            Sección
-                            {
-                                secciones === undefined
-                                    ? renderSkeleton()
-                                    : (
-                                        <select
-                                            disabled={!curso}
                                             className="w-full"
                                             value={seccion}
                                             onChange={handleChange('seccion')}>
                                             <option value=""> -- </option>
                                             {
-                                                secciones.map((seccion) => (
-                                                    <option key={seccion.id} value={seccion.id}>{seccion.nombre}</option>
+                                                seccionesAsignadas.map((sec) => (
+                                                    <option key={sec.id} value={sec.id}>{sec.curso_nombre} - {sec.nombre}</option>
                                                 ))
                                             }
                                         </select>
@@ -223,37 +186,32 @@ export default function NotasDocente() {
                                     ? <Skeleton className="w-full h-48" />
                                     : (
                                         <>
-                                            <table
-                                                className={twMerge(
-                                                    "min-w-fit w-full divide-y divide-neutral-200 text-sm",
-                                                    !seccion && "hidden"
-                                                )}
-                                            >
-                                                <thead className="bg-neutral-50">
-                                                    <tr>
-                                                        <th className="px-4 py-3 text-left font-medium text-neutral-600">Estudiante</th>
+                                            <Table>
+                                                <Table.Header>
+                                                    <Table.Row>
+                                                        <Table.Cell sortable>Estudiante</Table.Cell>
                                                         {
                                                             tipos_evaluacion.map((tipo) => (
-                                                                <th key={tipo.id} className="px-4 py-3 text-left font-medium text-neutral-600">
-                                                                    {tipo.nombre}
-                                                                    <span className="block text-xs text-neutral-400 font-normal">
-                                                                        {tipo.peso}
-                                                                    </span>
-                                                                </th>
+                                                                <Table.Cell key={tipo.id} sortable>
+                                                                    <div className="flex flex-col items-center justify-start gap-1">
+                                                                        {tipo.nombre}
+                                                                        <span className="block text-xs text-neutral-400 font-normal">
+                                                                            {tipo.peso}
+                                                                        </span>
+                                                                    </div>
+                                                                </Table.Cell>
                                                             ))
                                                         }
-                                                        <th className="px-4 py-3 text-center font-medium text-neutral-600">Promedio</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-neutral-200 bg-white">
+                                                        <Table.Cell sortable>Promedio</Table.Cell>
+                                                    </Table.Row>
+                                                </Table.Header>
+                                                <Table.Content>
                                                     {
                                                         estudiantes.map((est) => (
-                                                            <tr key={est.detalle_matricula_id}>
-                                                                <td className="px-4 py-3 text-neutral-900 whitespace-nowrap">
-                                                                    {est.estudiante_nombre}
-                                                                </td>
+                                                            <Table.Row key={est.detalle_matricula_id}>
+                                                                <Table.Cell value={est.estudiante_nombre} >{est.estudiante_nombre}</Table.Cell>
                                                                 {est.notas.map((n) => (
-                                                                    <td key={n.tipo_evaluacion_id} className="px-4 py-3 text-center">
+                                                                    <Table.Cell key={n.tipo_evaluacion_id} className="text-center">
                                                                         {n.nota === null && n.evaluacion_id === null ? (
                                                                             <EditableText
                                                                                 className="inline-flex justify-center"
@@ -271,22 +229,25 @@ export default function NotasDocente() {
                                                                                 }
                                                                             />
                                                                         )}
-                                                                    </td>
+                                                                    </Table.Cell>
                                                                 ))}
-                                                                <td className="px-4 py-3 text-center font-medium text-neutral-900">
+                                                                <Table.Cell className="text-center font-medium">
                                                                     {est.promedio_final ?? '--'}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    {estudiantes.length === 0 && (
-                                                        <tr>
-                                                            <td colSpan={tipos_evaluacion.length + 2} className="px-4 py-6 text-center text-neutral-500">
-                                                                No hay estudiantes matriculados en esta sección.
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
+                                                                </Table.Cell>
+                                                            </Table.Row>
+                                                        ))
+                                                    }
+                                                    {
+                                                        estudiantes.length === 0 && (
+                                                            <Table.Row>
+                                                                <Table.Cell colSpan={tipos_evaluacion.length + 2} className="text-center text-neutral-500">
+                                                                    No hay estudiantes matriculados en esta sección.
+                                                                </Table.Cell>
+                                                            </Table.Row>
+                                                        )
+                                                    }
+                                                </Table.Content>
+                                            </Table>
                                         </>
                                     )
                                 : (
@@ -343,11 +304,10 @@ const EditNotasSchema = ({ tipos_evaluacion = [], seccion_id, onSave }) => {
 
     const handleSave = async () => {
         try {
-            // Crear o actualizar cada item
             for (const item of items) {
                 if (item._new) {
                     if (!item.nombre || !item.peso) {
-                        continue // Skip if name or weight is empty
+                        continue
                     }
                     await EvaluacionService.crearTipoEvaluacion({
                         seccion_id,
@@ -385,62 +345,60 @@ const EditNotasSchema = ({ tipos_evaluacion = [], seccion_id, onSave }) => {
                     </Dialog.Header>
                     <Dialog.Content>
                         <div className="w-full">
-                            <div className="overflow-x-auto rounded-lg border border-neutral-300">
-                                <table className="min-w-75 w-100 divide-y divide-neutral-200 text-sm">
-                                    <thead>
-                                        <tr>
-                                            <th className="px-4 py-3 text-left font-medium text-neutral-600">Nombre</th>
-                                            <th className="w-30 px-4 py-3 text-left font-medium text-neutral-600">Peso</th>
-                                            <th className="w-12 px-4 py-3"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-neutral-200 bg-white">
-                                        {items.map((item, i) => (
-                                            <tr key={i}>
-                                                <td className="px-4 py-2">
-                                                    <input
-                                                        className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
-                                                        value={item.nombre}
-                                                        onChange={(e) => handleChange(i, 'nombre', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-2">
-                                                    <input
-                                                        className="w-full border border-neutral-300 rounded px-2 py-1 text-sm text-right"
-                                                        type="number"
-                                                        min="0"
-                                                        max="100"
-                                                        value={item.peso}
-                                                        onChange={(e) => handleChange(i, 'peso', e.target.value)}
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-2 text-center">
-                                                    {
-                                                        item._deleted
-                                                            ? (
-                                                                <button
-                                                                    className="text-green-500 hover:text-green-700 text-sm"
-                                                                    onClick={() => handleRestore(i)}
-                                                                >
-                                                                    Restaurar
-                                                                </button>
-                                                            ) :
-                                                            (
+                            <Table>
+                                <Table.Header>
+                                    <Table.Row>
+                                        <Table.Cell>Nombre</Table.Cell>
+                                        <Table.Cell>Peso</Table.Cell>
+                                        <Table.Cell></Table.Cell>
+                                    </Table.Row>
+                                </Table.Header>
+                                <Table.Content>
+                                    {items.map((item, i) => (
+                                        <Table.Row key={i}>
+                                            <Table.Cell>
+                                                <input
+                                                    className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
+                                                    value={item.nombre}
+                                                    onChange={(e) => handleChange(i, 'nombre', e.target.value)}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <input
+                                                    className="w-full border border-neutral-300 rounded px-2 py-1 text-sm text-right"
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    value={item.peso}
+                                                    onChange={(e) => handleChange(i, 'peso', e.target.value)}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell className="text-center">
+                                                {
+                                                    item._deleted
+                                                        ? (
+                                                            <button
+                                                                className="text-green-500 hover:text-green-700 text-sm"
+                                                                onClick={() => handleRestore(i)}
+                                                            >
+                                                                Restaurar
+                                                            </button>
+                                                        ) :
+                                                        (
 
-                                                                <button
-                                                                    className="text-red-500 hover:text-red-700 text-sm"
-                                                                    onClick={() => handleRemove(i)}
-                                                                >
-                                                                    Eliminar
-                                                                </button>
-                                                            )
-                                                    }
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                            <button
+                                                                className="text-red-500 hover:text-red-700 text-sm"
+                                                                onClick={() => handleRemove(i)}
+                                                            >
+                                                                Eliminar
+                                                            </button>
+                                                        )
+                                                }
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Content>
+                            </Table>
                             <button
                                 className="secondary mt-2 px-1.5 py-1 text-sm font-light flex items-center justify-start gap-2"
                                 onClick={handleAdd}

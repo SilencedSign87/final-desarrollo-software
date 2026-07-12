@@ -7,6 +7,7 @@ import { EvaluacionService } from "../../services/evaluacionService"
 import Skeleton from "../../components/Skeleton"
 import { Check, Info } from "lucide-react"
 import EditableText from "../../components/EditableText"
+import Table from "../../components/Table"
 
 export default function NotasAdministrativo() {
     const query = useQuery('administrativo_notas')
@@ -218,38 +219,35 @@ export default function NotasAdministrativo() {
                                     ? <Skeleton className="w-full h-48" />
                                     : (
                                         <>
-                                            <table
-                                                className={twMerge(
-                                                    "min-w-fit w-full divide-y divide-neutral-200 text-sm",
-                                                    !seccion && "hidden"
-                                                )}
-                                            >
-                                                <thead className="bg-neutral-50">
-                                                    <tr>
-                                                        <th className="px-4 py-3 text-left font-medium text-neutral-600">Estudiante</th>
+                                            <Table>
+                                                <Table.Header>
+                                                    <Table.Row>
+                                                        <Table.Cell sortable>Estudiante</Table.Cell>
                                                         {
                                                             tipos_evaluacion.map((tipo) => (
-                                                                <th key={tipo.id} className="px-4 py-3 text-left font-medium text-neutral-600">
-                                                                    {tipo.nombre}
-                                                                    <span className="block text-xs text-neutral-400 font-normal">
-                                                                        {tipo.peso}
-                                                                    </span>
-                                                                </th>
+                                                                <Table.Cell key={tipo.id} sortable>
+                                                                    <div>
+                                                                        {tipo.nombre}
+                                                                        <span className="block text-xs text-neutral-400 font-normal">
+                                                                            {tipo.peso}
+                                                                        </span>
+                                                                    </div>
+                                                                </Table.Cell>
                                                             ))
                                                         }
-                                                        <th className="px-4 py-3 text-center font-medium text-neutral-600">Promedio</th>
-                                                        <th className="px-4 py-3 text-center font-medium text-neutral-600">Acción</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-neutral-200 bg-white">
+                                                        <Table.Cell sortable>Promedio</Table.Cell>
+                                                        <Table.Cell>Acción</Table.Cell>
+                                                    </Table.Row>
+                                                </Table.Header>
+                                                <Table.Content>
                                                     {
                                                         estudiantes.map((est) => (
-                                                            <tr key={est.detalle_matricula_id}>
-                                                                <td className="px-4 py-3 text-neutral-900 whitespace-nowrap">
+                                                            <Table.Row key={est.detalle_matricula_id}>
+                                                                <Table.Cell>
                                                                     {est.estudiante_nombre}
-                                                                </td>
+                                                                </Table.Cell>
                                                                 {est.notas.map((n) => (
-                                                                    <td key={n.tipo_evaluacion_id} className="px-4 py-3 text-center">
+                                                                    <Table.Cell key={n.tipo_evaluacion_id} className="text-center">
                                                                         {n.nota === null && n.evaluacion_id === null ? (
                                                                             <EditableText
                                                                                 className="inline-flex justify-center"
@@ -267,7 +265,7 @@ export default function NotasAdministrativo() {
                                                                                 }
                                                                             />
                                                                         )}
-                                                                    </td>
+                                                                    </Table.Cell>
                                                                 ))}
                                                                 <td className="px-4 py-3 text-center font-medium text-neutral-900">
                                                                     {est.promedio_final ?? '--'}
@@ -278,22 +276,24 @@ export default function NotasAdministrativo() {
                                                                         onClick={() => handleValidarPromedio(est.detalle_matricula_id)}
                                                                     >
                                                                         <Check size={18} />
-                                                                        {
-                                                                            (est.promedio_final !== null && est.promedio_final!== '') ? 'Revalidar' : 'Validar'
-                                                                        }
+                                                                        Validar
                                                                     </button>
                                                                 </td>
+                                                            </Table.Row>
+                                                        ))
+                                                    }
+                                                    {
+                                                        estudiantes.length === 0 && (
+                                                            <tr>
+                                                                <td colSpan={tipos_evaluacion.length + 3} className="px-4 py-3 text-center text-neutral-500">
+                                                                    No hay estudiantes registrados en esta sección.
+                                                                </td>
                                                             </tr>
-                                                        ))}
-                                                    {estudiantes.length === 0 && (
-                                                        <tr>
-                                                            <td colSpan={tipos_evaluacion.length + 3} className="px-4 py-6 text-center text-neutral-500">
-                                                                No hay estudiantes matriculados en esta sección.
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
+                                                        )
+                                                    }
+                                                </Table.Content>
+
+                                            </Table>
                                         </>
                                     )
                                 : (

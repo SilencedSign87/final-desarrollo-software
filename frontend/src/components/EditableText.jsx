@@ -11,7 +11,7 @@ export default function EditableText({ value, onChange, className, ...props }) {
             setIsEditing(!isEditing)
         } else if (event.key === 'Enter' && isEditing) {
             setIsEditing(false)
-            onChange(text)
+            if (text !== value) onChange(text)
         } else if (event.key === 'Escape' && isEditing) {
             setIsEditing(false)
             setText(value)
@@ -28,7 +28,7 @@ export default function EditableText({ value, onChange, className, ...props }) {
     const handleBlur = () => {
         if (isEditing) {
             setIsEditing(false)
-            onChange(text)
+            if (text !== value) onChange(text)
         }
     }
 
@@ -70,7 +70,7 @@ export default function EditableText({ value, onChange, className, ...props }) {
                 onBlur={handleBlur}
                 onInput={handleInput}
                 className={twMerge(
-                    "px-1",
+                    "px-1 cursor-cell",
                     isEditing ? "outline-none ring-1 ring-black rounded-none" : ""
                 )}
                 style={{ display: 'inline-block', minWidth: '2rem' }}

@@ -3,6 +3,7 @@ import { useQuery } from "../../hooks/useQuery"
 import { PeriodoAcademicoService } from "../../services/periodoAcademicoService"
 import { EvaluacionService } from "../../services/evaluacionService"
 import Spinner from "../../components/Spinner"
+import Table from "../../components/Table"
 
 export default function NotasEstudiante() {
     const query = useQuery()
@@ -100,26 +101,26 @@ export default function NotasEstudiante() {
                                         </header>
                                         <legend className="text-sm font-medium text-neutral-600 px-4">Notas</legend>
                                         <div className="overflow-x-auto px-4">
-                                            <table className="min-w-100 w-full divide-y divide-neutral-200 text-sm">
-                                                <thead className="bg-neutral-50">
-                                                    <tr>
-                                                        <th className="px-4 py-3 text-left font-medium text-neutral-600">Nombre</th>
-                                                        <th className="w-20 px-4 py-3 text-left font-medium text-neutral-600">Peso</th>
-                                                        <th className="w-20 px-4 py-3 text-left font-medium text-neutral-600">Nota</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-neutral-200 bg-white">
+                                            <Table>
+                                                <Table.Header>
+                                                    <Table.Row>
+                                                        <Table.Cell>Nombre</Table.Cell>
+                                                        <Table.Cell>Peso</Table.Cell>
+                                                        <Table.Cell sortable>Nota</Table.Cell>
+                                                    </Table.Row>
+                                                </Table.Header>
+                                                <Table.Content>
                                                     {
                                                         nota.evaluaciones.map((evaluacion) => (
-                                                            <tr key={evaluacion.nombre + evaluacion.peso}>
-                                                                <td className="px-4 py-3">{evaluacion.nombre}</td>
-                                                                <td className="px-4 py-3 text-right">{evaluacion.peso}</td>
-                                                                <td className="px-4 py-3 text-right">{evaluacion.nota}</td>
-                                                            </tr>
+                                                            <Table.Row key={evaluacion.nombre + evaluacion.peso}>
+                                                                <Table.Cell>{evaluacion.nombre}</Table.Cell>
+                                                                <Table.Cell>{evaluacion.peso}</Table.Cell>
+                                                                <Table.Cell value={evaluacion.nota}>{evaluacion.nota}</Table.Cell>
+                                                            </Table.Row>
                                                         ))
                                                     }
-                                                </tbody>
-                                            </table>
+                                                </Table.Content>
+                                            </Table>
                                         </div>
                                         <footer className="p-4 pt-1 pb-2 border-t text-sm border-neutral-300 flex items-center justify-between">
                                             <div className="px-4 py-3 text-neutral-800 font-semibold flex flex-col gap-1" colSpan={2}>
