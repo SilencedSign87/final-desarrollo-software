@@ -176,6 +176,7 @@ class EvaluacionService:
         promedio = EvaluacionService._calcular_promedio_por_detalle(detalle_matricula_id)
         detalle.promedio_final = promedio
         detalle.is_validated = True
+        detalle.estado_curso = "aprobado" if promedio is not None and promedio >= 10.5 else "desaprobado"
         db.session.commit()
         return float(promedio) if promedio else None
 
