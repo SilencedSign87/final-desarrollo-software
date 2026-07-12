@@ -4,10 +4,12 @@ export default function AuditSummaryCards({ summary }) {
         { label: 'Solicitudes de documentos', value: summary.total_solicitudes_documento },
         { label: 'Documentos pendientes', value: summary.documentos_pendientes },
         { label: 'Documentos emitidos', value: summary.documentos_emitidos },
+        { label: 'Eventos de bitácora', value: summary.total_eventos_auditoria ?? 0 },
+        { label: 'Cambios de rol', value: summary.cambios_rol ?? 0 },
     ]
 
     return (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {items.map((item) => (
                 <article
                     key={item.label}

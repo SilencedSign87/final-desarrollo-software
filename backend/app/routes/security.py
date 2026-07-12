@@ -1,12 +1,21 @@
+from flask import g
 from flask_openapi3 import APIBlueprint, Tag
 
 from ..extensions import db
 from ..middleware import auth_required, roles_required
+from ..models.auditoria_log import AuditoriaLog
 from ..models.solicitud_documento import SolicitudDocumento
 from ..models.user import User
 from ..schemas.generic_schema import ErrorResponse
-from ..schemas.security_schema import AuditReportResponse, RoleUpdate, UserIdPath
+from ..schemas.security_schema import (
+    AuditoriaLogQuery,
+    AuditoriaLogResponse,
+    AuditReportResponse,
+    RoleUpdate,
+    UserIdPath,
+)
 from ..schemas.user_schema import UserResponse
+from ..services.audit_service import AuditService
 
 security_tag = Tag(
     name="Administracion y Seguridad",
@@ -23,6 +32,18 @@ def _serialize_user(user):
         apellidos=user.apellidos,
         email=user.email,
         rol=user.rol,
+    ).model_dump()
+
+
+def _serialize_log(entry: AuditoriaLog):
+    return AuditoriaLogResponse(
+        id=entry.id,
+        user_id=entry.user_id,
+        usuario_email=entry.usuario_email,
+        accion=entry.accion,
+        recurso=entry.recurso,
+        detalle=entry.detalle,
+        fecha_creacion=entry.fecha_creacion.isoformat() if entry.fecha_creacion else "",
     ).model_dump()
 
 
@@ -60,13 +81,23 @@ def update_user_role(path: UserIdPath, body: RoleUpdate):
     if not user:
         return {"error": "Usuario no encontrado"}, 404
 
+    rol_anterior = user.rol
+    if rol_anterior == body.rol:
+        return _serialize_user(user), 200
+
     user.rol = body.rol
+    AuditService.log(
+        accion="cambio_rol",
+        recurso=f"user:{user.id}",
+        detalle=(
+            f"{user.email}: {rol_anterior} → {body.rol} "
+            f"(por {g.current_user.email})"
+        ),
+        user=g.current_user,
+    )
     db.session.commit()
 
-    return (
-        _serialize_user(user),
-        200,
-    )
+    return _serialize_user(user), 200
 
 
 @security_bp.get(
@@ -88,6 +119,50 @@ def audit_summary():
             total_solicitudes_documento=total_solicitudes,
             documentos_pendientes=documentos_pendientes,
             documentos_emitidos=documentos_emitidos,
+            total_eventos_auditoria=AuditoriaLog.query.count(),
+            cambios_rol=AuditoriaLog.query.filter_by(accion="cambio_rol").count(),
         ).model_dump(),
         200,
     )
+
+
+@security_bp.get(
+    "/auditorias/logs",
+    responses={"200": {"description": "Bitácora cronológica"}, "403": ErrorResponse},
+)
+@roles_required("direccion")
+def audit_logs(query: AuditoriaLogQuery):
+    """Listar bitácora inmutable de acciones críticas."""
+    pagination = AuditService.list_logs(
+        page=query.page,
+        per_page=query.per_page,
+        accion=query.accion,
+    )
+    return {
+        "data": [_serialize_log(entry) for entry in pagination.items],
+        "meta": {
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "total": pagination.total,
+            "pages": pagination.pages,
+        },
+    }, 200
+
+
+@security_bp.get(
+    "/auditorias/cambios-rol",
+    responses={"200": {"description": "Historial de cambios de rol"}, "403": ErrorResponse},
+)
+@roles_required("direccion")
+def role_change_history(query: AuditoriaLogQuery):
+    """Historial de cambios de rol (subset de la bitácora)."""
+    pagination = AuditService.list_role_changes(page=query.page, per_page=query.per_page)
+    return {
+        "data": [_serialize_log(entry) for entry in pagination.items],
+        "meta": {
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "total": pagination.total,
+            "pages": pagination.pages,
+        },
+    }, 200

@@ -43,9 +43,28 @@ def register(body: UserCreate):
 )
 def login(body: UserLogin):
     """Iniciar sesión"""
+    from ..extensions import db
+    from ..models.user import User
+    from ..services.audit_service import AuditService
+
     user = AuthService.login(body.model_dump())
     if not user:
+        AuditService.log(
+            accion="login_fallido",
+            recurso="auth",
+            detalle=f"Intento fallido de acceso con email {body.email}",
+            user=None,
+        )
+        db.session.commit()
         return {"error": "Credenciales inválidas"}, 401
+
+    AuditService.log(
+        accion="login",
+        recurso="auth",
+        detalle=f"Inicio de sesión exitoso ({user.rol})",
+        user=user,
+    )
+    db.session.commit()
     return (
         UserResponse(
             id=user.id,
@@ -76,6 +95,19 @@ def login(body: UserLogin):
 )
 def logout():
     """Cerrar sesión"""
+    from ..extensions import db
+    from ..services.audit_service import AuditService
+    from ..services.auth_service import AuthService as AuthSvc
+
+    user = AuthSvc.get_current_user()
+    if user:
+        AuditService.log(
+            accion="logout",
+            recurso="auth",
+            detalle="Cierre de sesión",
+            user=user,
+        )
+        db.session.commit()
     AuthService.logout()
     return {"message": "Cierre de sesión exitoso"}, 200
 

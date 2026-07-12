@@ -15,3 +15,19 @@ export const updateUserRole = async (userId, data) => {
 export const getAuditSummary = async () => {
     return apiClient.get('/seguridad/auditorias/resumen')
 }
+
+export const getAuditLogs = async ({ page = 1, per_page = 15, accion } = {}) => {
+    return apiClient.get('/seguridad/auditorias/logs', {
+        params: {
+            page,
+            per_page,
+            ...(accion ? { accion } : {}),
+        },
+    })
+}
+
+export const getRoleChangeHistory = async ({ page = 1, per_page = 10 } = {}) => {
+    return apiClient.get('/seguridad/auditorias/cambios-rol', {
+        params: { page, per_page },
+    })
+}

@@ -23,6 +23,7 @@ from ..services.document_service import DocumentService
 from ..services.file_service import FileService
 from ..services.signature_service import SignatureService
 from ..services.tipo_documento_service import TipoDocumentoService
+from ..services.audit_service import AuditService
 
 documents_tag = Tag(
     name="Certificados y Documentos",
@@ -222,9 +223,21 @@ def authorize_document_request(path: SolicitudDocumentoPath, body: DocumentoAuto
     if body.aprobado:
         solicitud.estado = "autorizado"
         solicitud.observacion = body.observacion.strip() if body.observacion else None
+        AuditService.log(
+            accion="autorizar_documento",
+            recurso=solicitud.codigo_ticket or f"solicitud:{solicitud.id}",
+            detalle=f"Documento autorizado: {solicitud.tipo_documento}",
+            user=g.current_user,
+        )
     else:
         solicitud.estado = "rechazado"
         solicitud.observacion = body.observacion.strip()
+        AuditService.log(
+            accion="rechazar_documento",
+            recurso=solicitud.codigo_ticket or f"solicitud:{solicitud.id}",
+            detalle=f"Documento rechazado: {solicitud.observacion}",
+            user=g.current_user,
+        )
 
     solicitud.respondido_por_user_id = g.current_user.id
     solicitud.fecha_respuesta = datetime.now(timezone.utc)
@@ -260,6 +273,12 @@ def issue_document(path: SolicitudDocumentoPath):
     solicitud.firma_huella_cert = firma_info["firma_huella_cert"]
     solicitud.contenido_hash = firma_info["contenido_hash"]
     solicitud.fecha_emision = datetime.now(timezone.utc)
+    AuditService.log(
+        accion="emitir_documento",
+        recurso=solicitud.codigo_ticket or f"solicitud:{solicitud.id}",
+        detalle=f"Documento emitido con firma digital: {solicitud.tipo_documento}",
+        user=g.current_user,
+    )
     db.session.commit()
 
     return _serialize_solicitud(solicitud), 200
