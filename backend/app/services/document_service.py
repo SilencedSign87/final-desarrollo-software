@@ -11,6 +11,9 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from ..models.solicitud_documento import SolicitudDocumento
+from .signature_service import SignatureService
+
 
 class DocumentService:
     @staticmethod
@@ -33,6 +36,28 @@ class DocumentService:
     @staticmethod
     def generate_qr_hash() -> str:
         return secrets.token_hex(16)
+
+    @staticmethod
+    def generate_ticket_code(fecha: datetime | None = None) -> str:
+        """Genera un código inmutable REQ-[AÑO]-[CORRELATIVO]."""
+        moment = fecha or datetime.now(timezone.utc)
+        year = moment.year
+        prefix = f"REQ-{year}-"
+        last = (
+            SolicitudDocumento.query.filter(
+                SolicitudDocumento.codigo_ticket.like(f"{prefix}%")
+            )
+            .order_by(SolicitudDocumento.codigo_ticket.desc())
+            .first()
+        )
+        if last and last.codigo_ticket:
+            try:
+                correlativo = int(last.codigo_ticket.rsplit("-", 1)[-1]) + 1
+            except ValueError:
+                correlativo = 1
+        else:
+            correlativo = 1
+        return f"{prefix}{correlativo:04d}"
 
     @staticmethod
     def _build_qr_image(verification_url: str) -> io.BytesIO:
@@ -61,8 +86,9 @@ class DocumentService:
         return especialidad
 
     @classmethod
-    def generate_document(cls, solicitud) -> tuple[str, str]:
+    def generate_document(cls, solicitud) -> tuple[str, str, dict]:
         qr_hash = cls.generate_qr_hash()
+        firma_info = SignatureService.sign_document(solicitud, qr_hash)
         verification_url = cls.build_verification_url(qr_hash)
         pdf_filename = f"solicitud-{solicitud.id}.pdf"
         pdf_path = cls._documents_dir() / pdf_filename
@@ -89,6 +115,14 @@ class DocumentService:
             leading=16,
             spaceAfter=10,
         )
+        mono_style = ParagraphStyle(
+            "DocumentMono",
+            parent=styles["Normal"],
+            fontSize=8,
+            leading=11,
+            textColor=colors.HexColor("#334155"),
+            spaceAfter=6,
+        )
 
         doc = SimpleDocTemplate(
             str(pdf_path),
@@ -103,24 +137,33 @@ class DocumentService:
         student_name = cls._student_name(solicitud)
         student_dni = cls._student_dni(solicitud)
         student_program = cls._student_program(solicitud)
+        ticket = solicitud.codigo_ticket or f"#{solicitud.id}"
+        firma_digital = firma_info["firma_digital"]
 
         content = [
             Paragraph("Sistema Académico Universitario", title_style),
             Paragraph("Documento oficial emitido", subtitle_style),
             Spacer(1, 0.2 * inch),
+            Paragraph(f"<b>Código de ticket:</b> {ticket}", body_style),
             Paragraph(f"<b>Tipo de documento:</b> {solicitud.tipo_documento}", body_style),
             Paragraph(f"<b>Estudiante:</b> {student_name}", body_style),
             Paragraph(f"<b>DNI:</b> {student_dni}", body_style),
             Paragraph(f"<b>Programa:</b> {student_program}", body_style),
             Paragraph(f"<b>Fecha de emisión:</b> {issued_at}", body_style),
             Paragraph(f"<b>Código de verificación:</b> {qr_hash}", body_style),
-            Spacer(1, 0.3 * inch),
+            Paragraph(f"<b>Algoritmo:</b> {firma_info['firma_algoritmo']}", body_style),
+            Paragraph(f"<b>Huella de clave pública:</b> {firma_info['firma_huella_cert']}", body_style),
+            Paragraph(f"<b>Hash del contenido:</b> {firma_info['contenido_hash']}", body_style),
+            Spacer(1, 0.2 * inch),
+            Paragraph("<b>Firma digital (RSA-PSS / SHA-256):</b>", body_style),
+            Paragraph(firma_digital[:96] + "...", mono_style),
+            Spacer(1, 0.2 * inch),
             Paragraph(
                 "Este documento fue generado automáticamente por el sistema académico. "
-                "Escanee el código QR para validar su autenticidad.",
+                "Escanee el código QR para validar su autenticidad y firma digital.",
                 body_style,
             ),
-            Spacer(1, 0.4 * inch),
+            Spacer(1, 0.3 * inch),
         ]
 
         qr_buffer = cls._build_qr_image(verification_url)
@@ -138,7 +181,7 @@ class DocumentService:
 
         doc.build(content)
 
-        return cls.build_download_url(solicitud.id), qr_hash
+        return cls.build_download_url(solicitud.id), qr_hash, firma_info
 
     @classmethod
     def get_pdf_path(cls, solicitud_id: int) -> Path | None:

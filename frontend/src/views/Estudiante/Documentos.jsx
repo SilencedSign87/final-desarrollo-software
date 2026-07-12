@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FileText, Plus } from 'lucide-react'
+import DocumentPagination from '../../components/documents/DocumentPagination'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
 import { createDocumentRequest, getDocumentRequests } from '../../services/documentsService'
 import { getTiposDocumento } from '../../services/tipoDocumentoService'
 
+const PER_PAGE = 10
+
 export default function EstudianteDocumentos() {
     const [requests, setRequests] = useState([])
+    const [meta, setMeta] = useState(null)
+    const [page, setPage] = useState(1)
     const [tipos, setTipos] = useState([])
     const [tipoDocumentoId, setTipoDocumentoId] = useState('')
     const [comprobante, setComprobante] = useState(null)
@@ -22,14 +27,15 @@ export default function EstudianteDocumentos() {
     )
     const requierePago = Boolean(tipoSeleccionado?.requiere_pago)
 
-    const loadRequests = useCallback(async ({ showLoading = false } = {}) => {
+    const loadRequests = useCallback(async ({ showLoading = false, pageToLoad = page } = {}) => {
         if (showLoading) {
             setIsLoading(true)
         }
         setError(null)
         try {
-            const response = await getDocumentRequests()
+            const response = await getDocumentRequests({ page: pageToLoad, per_page: PER_PAGE })
             setRequests(response.data.data ?? [])
+            setMeta(response.data.meta ?? null)
         } catch (requestError) {
             setError(requestError.response?.data?.error ?? 'No se pudieron cargar las solicitudes')
         } finally {
@@ -37,15 +43,17 @@ export default function EstudianteDocumentos() {
                 setIsLoading(false)
             }
         }
-    }, [])
+    }, [page])
 
     useEffect(() => {
         let active = true
 
-        getDocumentRequests()
+        setIsLoading(true)
+        getDocumentRequests({ page, per_page: PER_PAGE })
             .then((response) => {
                 if (active) {
                     setRequests(response.data.data ?? [])
+                    setMeta(response.data.meta ?? null)
                 }
             })
             .catch((requestError) => {
@@ -58,6 +66,14 @@ export default function EstudianteDocumentos() {
                     setIsLoading(false)
                 }
             })
+
+        return () => {
+            active = false
+        }
+    }, [page])
+
+    useEffect(() => {
+        let active = true
 
         getTiposDocumento()
             .then((response) => {
@@ -105,7 +121,8 @@ export default function EstudianteDocumentos() {
                 comprobante,
             })
             setDialogOpen(false)
-            await loadRequests({ showLoading: true })
+            setPage(1)
+            await loadRequests({ showLoading: true, pageToLoad: 1 })
         } catch (requestError) {
             setError(requestError.response?.data?.error ?? 'No se pudo crear la solicitud')
         } finally {
@@ -202,12 +219,20 @@ export default function EstudianteDocumentos() {
                         <Spinner />
                     </div>
                 ) : (
-                    <DocumentRequestsTable
-                        requests={requests}
-                        emptyMessage="Aún no has solicitado documentos."
-                        showDownload
-                        showComprobante
-                    />
+                    <div className="space-y-4">
+                        <DocumentRequestsTable
+                            requests={requests}
+                            emptyMessage="Aún no has solicitado documentos."
+                            showDownload
+                            showComprobante
+                            showObservacion
+                        />
+                        <DocumentPagination
+                            meta={meta}
+                            page={page}
+                            onPageChange={setPage}
+                        />
+                    </div>
                 )}
             </div>
         </section>

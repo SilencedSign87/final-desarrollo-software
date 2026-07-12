@@ -1,27 +1,33 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FileCheck } from 'lucide-react'
+import DocumentPagination from '../../components/documents/DocumentPagination'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
 import TipoDocumentoPagoConfig from '../../components/documents/TipoDocumentoPagoConfig'
 import Dialog from '../../components/Dialog'
 import Spinner from '../../components/spinner'
 import { getDocumentRequests, issueDocument } from '../../services/documentsService'
 
+const PER_PAGE = 10
+
 export default function AdministrativoDocumentos() {
     const [requests, setRequests] = useState([])
+    const [meta, setMeta] = useState(null)
+    const [page, setPage] = useState(1)
     const [selectedRequest, setSelectedRequest] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState(null)
     const [dialogOpen, setDialogOpen] = useState(false)
 
-    const loadRequests = useCallback(async ({ showLoading = false } = {}) => {
+    const loadRequests = useCallback(async ({ showLoading = false, pageToLoad = page } = {}) => {
         if (showLoading) {
             setIsLoading(true)
         }
         setError(null)
         try {
-            const response = await getDocumentRequests()
+            const response = await getDocumentRequests({ page: pageToLoad, per_page: PER_PAGE })
             setRequests(response.data.data ?? [])
+            setMeta(response.data.meta ?? null)
         } catch (requestError) {
             setError(requestError.response?.data?.error ?? 'No se pudieron cargar las solicitudes')
         } finally {
@@ -29,15 +35,17 @@ export default function AdministrativoDocumentos() {
                 setIsLoading(false)
             }
         }
-    }, [])
+    }, [page])
 
     useEffect(() => {
         let active = true
 
-        getDocumentRequests()
+        setIsLoading(true)
+        getDocumentRequests({ page, per_page: PER_PAGE })
             .then((response) => {
                 if (active) {
                     setRequests(response.data.data ?? [])
+                    setMeta(response.data.meta ?? null)
                 }
             })
             .catch((requestError) => {
@@ -54,7 +62,7 @@ export default function AdministrativoDocumentos() {
         return () => {
             active = false
         }
-    }, [])
+    }, [page])
 
     const openIssueDialog = (request) => {
         setSelectedRequest(request)
@@ -84,7 +92,7 @@ export default function AdministrativoDocumentos() {
             <div>
                 <h2 className="text-2xl font-semibold text-slate-900">Emisión de documentos</h2>
                 <p className="mt-1 text-sm text-neutral-600">
-                    Emite certificados autorizados. El sistema generará el PDF y el código QR automáticamente.
+                    Emite certificados autorizados con firma digital RSA y código QR de verificación.
                 </p>
             </div>
 
@@ -101,28 +109,37 @@ export default function AdministrativoDocumentos() {
                     <Spinner />
                 </div>
             ) : (
-                <DocumentRequestsTable
-                    requests={requests}
-                    emptyMessage="No hay solicitudes registradas."
-                    showDownload
-                    showComprobante
-                    actions={(request) =>
-                        request.estado === 'autorizado' ? (
-                            <button
-                                type="button"
-                                className="primary inline-flex items-center gap-2"
-                                onClick={() => openIssueDialog(request)}
-                            >
-                                <FileCheck className="h-4 w-4" />
-                                Emitir
-                            </button>
-                        ) : request.estado === 'emitido' ? (
-                            <span className="text-xs text-neutral-500">Documento emitido</span>
-                        ) : (
-                            <span className="text-xs text-neutral-500">Pendiente de autorización</span>
-                        )
-                    }
-                />
+                <div className="space-y-4">
+                    <DocumentRequestsTable
+                        requests={requests}
+                        emptyMessage="No hay solicitudes registradas."
+                        showDownload
+                        showComprobante
+                        showObservacion
+                        actions={(request) =>
+                            request.estado === 'autorizado' ? (
+                                <button
+                                    type="button"
+                                    className="primary inline-flex items-center gap-2"
+                                    onClick={() => openIssueDialog(request)}
+                                >
+                                    <FileCheck className="h-4 w-4" />
+                                    Emitir
+                                </button>
+                            ) : request.estado === 'emitido' ? (
+                                <span className="text-xs text-neutral-500">Documento emitido</span>
+                            ) : (
+                                <span className="text-xs text-neutral-500">Pendiente de autorización</span>
+                            )
+                        }
+                    />
+                    <DocumentPagination
+                        meta={meta}
+                        page={page}
+                        onPageChange={setPage}
+                        disabled={isSubmitting}
+                    />
+                </div>
             )}
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -132,10 +149,12 @@ export default function AdministrativoDocumentos() {
                         {selectedRequest && (
                             <div className="space-y-3 text-sm text-neutral-600">
                                 <p>
-                                    Solicitud #{selectedRequest.id} · {selectedRequest.tipo_documento}
+                                    Ticket {selectedRequest.codigo_ticket || `#${selectedRequest.id}`} ·{' '}
+                                    {selectedRequest.tipo_documento}
                                 </p>
                                 <p>
-                                    Al confirmar, el sistema generará un PDF oficial con código QR de verificación.
+                                    Al confirmar, el sistema generará un PDF oficial con firma digital RSA
+                                    y código QR de verificación.
                                 </p>
                             </div>
                         )}
@@ -147,7 +166,7 @@ export default function AdministrativoDocumentos() {
                             disabled={isSubmitting}
                             onClick={handleIssue}
                         >
-                            {isSubmitting ? 'Generando PDF...' : 'Confirmar emisión'}
+                            {isSubmitting ? 'Firmando y generando PDF...' : 'Confirmar emisión'}
                         </button>
                         <Dialog.Trigger className="subtle">Cancelar</Dialog.Trigger>
                     </Dialog.Footer>

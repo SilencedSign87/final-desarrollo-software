@@ -7,6 +7,7 @@ export default function DocumentRequestsTable({
     actions,
     showDownload = false,
     showComprobante = false,
+    showObservacion = false,
 }) {
     if (!requests?.length) {
         return (
@@ -21,11 +22,14 @@ export default function DocumentRequestsTable({
             <table className="min-w-full divide-y divide-neutral-200 text-sm">
                 <thead className="bg-neutral-50">
                     <tr>
-                        <th className="px-4 py-3 text-left font-medium text-neutral-600">ID</th>
+                        <th className="px-4 py-3 text-left font-medium text-neutral-600">Ticket</th>
                         <th className="px-4 py-3 text-left font-medium text-neutral-600">Estudiante</th>
                         <th className="px-4 py-3 text-left font-medium text-neutral-600">Documento</th>
                         <th className="px-4 py-3 text-left font-medium text-neutral-600">Estado</th>
                         <th className="px-4 py-3 text-left font-medium text-neutral-600">Fecha</th>
+                        {showObservacion && (
+                            <th className="px-4 py-3 text-left font-medium text-neutral-600">Observación</th>
+                        )}
                         {showComprobante && (
                             <th className="px-4 py-3 text-left font-medium text-neutral-600">Comprobante</th>
                         )}
@@ -40,7 +44,9 @@ export default function DocumentRequestsTable({
                 <tbody className="divide-y divide-neutral-200 bg-white">
                     {requests.map((request) => (
                         <tr key={request.id}>
-                            <td className="px-4 py-3 text-neutral-900">{request.id}</td>
+                            <td className="px-4 py-3 font-medium text-neutral-900">
+                                {request.codigo_ticket || `#${request.id}`}
+                            </td>
                             <td className="px-4 py-3 text-neutral-700">{request.estudiante_id}</td>
                             <td className="px-4 py-3 text-neutral-900">
                                 {request.tipo_documento}
@@ -54,6 +60,13 @@ export default function DocumentRequestsTable({
                             <td className="px-4 py-3 text-neutral-600">
                                 {new Date(request.fecha_creacion).toLocaleString()}
                             </td>
+                            {showObservacion && (
+                                <td className="px-4 py-3 text-neutral-600">
+                                    {request.observacion || (
+                                        <span className="text-xs text-neutral-400">—</span>
+                                    )}
+                                </td>
+                            )}
                             {showComprobante && (
                                 <td className="px-4 py-3">
                                     {request.comprobante_url ? (
@@ -87,6 +100,11 @@ export default function DocumentRequestsTable({
                                             {request.qr_hash && (
                                                 <span className="block text-xs text-neutral-500">
                                                     QR: {request.qr_hash.slice(0, 12)}...
+                                                </span>
+                                            )}
+                                            {request.firma_digital && (
+                                                <span className="block text-xs text-emerald-700">
+                                                    Firma digital OK
                                                 </span>
                                             )}
                                         </div>
