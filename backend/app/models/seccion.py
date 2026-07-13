@@ -5,7 +5,7 @@ class Seccion(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     curso_id = db.Column(db.Integer, db.ForeignKey('curso.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
-    docente_id = db.Column(db.Integer, db.ForeignKey('docente.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    docente_id = db.Column(db.Integer, db.ForeignKey('docente.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
     periodo_academico_id = db.Column(db.Integer, db.ForeignKey('periodo_academico.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
     aforo = db.Column(db.Integer, nullable=False)

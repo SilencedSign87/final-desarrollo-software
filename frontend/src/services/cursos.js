@@ -26,3 +26,13 @@ export const GetCursos = getCursos
 export const GetCursosDisponibles = () => {
     return apiClient.get('/cursos/disponibles')
 }
+
+export const getPlanesEstudio = async () => {
+    return apiClient.get('/cursos/planes-estudio')
+}
+
+export const getCumplimientoPlan = async (plan_estudios_id, periodo_academico_id) => {
+    return apiClient.get('/cursos/cumplimiento-plan', {
+        params: { plan_estudios_id, periodo_academico_id },
+    })
+}

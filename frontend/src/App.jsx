@@ -29,10 +29,7 @@ import AdministrativoCursos from "./views/Administrativo/Cursos"
 import AdministrativoDocentes from "./views/Administrativo/Docentes"
 import AdministrativoSecciones from "./views/Administrativo/Secciones"
 import DireccionCargaDocente from "./views/Direccion/CargaDocente"
-import EstudianteRecordAcademico from "./views/Estudiante/EstudianteRecordAcademico"
-import DireccionNotas from "./views/Direccion/DireccionNotas"
-import AdministrativoRecordAcademico from "./views/Administrativo/AdministrativoRecordAcademico"
-import DireccionRecordAcademico from "./views/Direccion/DireccionRecordAcademico"
+import CumplimientoPlan from "./views/Direccion/CumplimientoPlan"
 
 function App() {
   return (
@@ -59,7 +56,6 @@ function App() {
             <Route path="matricula" element={<EstudianteMatricula />} />
             <Route path="documentos" element={<EstudianteDocumentos />} />
             <Route path="notas" element={<NotasEstudiante />} />
-            <Route path="record-academico" element={<EstudianteRecordAcademico />} />
           </Route>
 
           {/* Docente */}
@@ -92,10 +88,7 @@ function App() {
             <Route path="docentes" element={<AdministrativoDocentes />} />
             <Route path="secciones" element={<AdministrativoSecciones />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
-            <Route path="notas" element={<NotasAdministrativo />} />
-            <Route path="record-academico" element={<AdministrativoRecordAcademico />} />
             <Route path="seguridad" element={<AdministrativoSeguridad />} />
-
           </Route>
 
           {/* Director */}
@@ -109,9 +102,8 @@ function App() {
           >
             <Route path="dashboard" element={<DireccionDashboard />} />
             <Route path="matricula" element={<DireccionMatricula />} />
-            <Route path="notas" element={<DireccionNotas />} />
-            <Route path="record-academico" element={<DireccionRecordAcademico />} />
             <Route path="carga-docente" element={<DireccionCargaDocente />} />
+            <Route path="cumplimiento-plan" element={<CumplimientoPlan />} />
             <Route path="documentos" element={<DireccionDocumentos />} />
             <Route path="auditorias" element={<DireccionAuditorias />} />
           </Route>

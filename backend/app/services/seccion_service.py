@@ -9,21 +9,19 @@ class SeccionService:
 
     @staticmethod
     def crear_seccion(data):
-        """
-        Crea una sección validando que el curso y el docente existan.
-        Lanza ValueError con mensaje claro si algo no cumple.
-        """
         curso = Curso.query.get(data["curso_id"])
         if not curso:
             raise ValueError("El curso no existe")
 
-        docente = Docente.query.get(data["docente_id"])
-        if not docente:
-            raise ValueError("El docente no existe")
+        docente_id = data.get("docente_id")
+        if docente_id is not None:
+            docente = Docente.query.get(docente_id)
+            if not docente:
+                raise ValueError("El docente no existe")
 
         seccion = Seccion(
             curso_id=data["curso_id"],
-            docente_id=data["docente_id"],
+            docente_id=docente_id,
             periodo_academico_id=data["periodo_academico_id"],
             nombre=data["nombre"],
             aforo=data["aforo"],

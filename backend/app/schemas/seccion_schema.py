@@ -1,11 +1,12 @@
 from pydantic import BaseModel, Field, RootModel
 from typing import Optional
+from .horario_schema import HorarioResponse
 
 
 class SeccionCreate(BaseModel):
     """Schema para que el admin cree una nueva sección (asigna docente a un curso)"""
     curso_id: int = Field(..., description="ID del curso")
-    docente_id: int = Field(..., description="ID del docente asignado")
+    docente_id: Optional[int] = Field(None, description="ID del docente asignado (opcional, se puede asignar después)")
     periodo_academico_id: int = Field(..., description="ID del periodo académico")
     nombre: str = Field(..., min_length=1, max_length=100, description="Ej: 'DAW-A'")
     aforo: int = Field(..., gt=0, description="Cupos disponibles, debe ser mayor a 0")
@@ -25,13 +26,14 @@ class SilaboUpload(BaseModel):
 class SeccionResponse(BaseModel):
     id: int
     curso_id: int
-    docente_id: int
+    docente_id: Optional[int] = None
     periodo_academico_id: int
     nombre: str
     aforo: int
     silabo_url: Optional[str] = None
     acta_validada: bool = False
     cupos_ocupados: int = 0
+    horarios: list[HorarioResponse] = []
 
 
 class SeccionListResponse(RootModel[list[SeccionResponse]]):

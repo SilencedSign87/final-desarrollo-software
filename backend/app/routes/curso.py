@@ -129,3 +129,41 @@ def eliminar_curso(path: CursoPath):
     if not eliminado:
         return {"error": "Curso no encontrado"}, 404
     return {"message": "Curso eliminado correctamente"}, 200
+
+
+@curso_bp.get(
+    "/planes-estudio",
+    responses={"200": {"description": "Lista de planes de estudio"}, "401": ErrorResponse},
+)
+def listar_planes_estudio():
+    """Lista breve de planes de estudio (para selects, ej. cumplimiento de plan en dirección)."""
+    user = AuthService.get_current_user()
+    if not user:
+        return {"error": "No hay usuario autenticado"}, 401
+
+    return CursoService.listar_planes_estudio(), 200
+
+
+class CumplimientoPlanQuery(BaseModel):
+    plan_estudios_id: int = Field(..., description="Plan de estudios a evaluar")
+    periodo_academico_id: int | None = Field(None, description="Si no se indica, usa el periodo activo")
+
+
+@curso_bp.get(
+    "/cumplimiento-plan",
+    responses={"200": {"description": "Cumplimiento del plan de estudios por curso"}, "400": ErrorResponse, "401": ErrorResponse},
+)
+def cumplimiento_plan(query: CumplimientoPlanQuery):
+    """Dirección revisa qué cursos del plan no tienen sección o docente asignado en el periodo."""
+    user = AuthService.get_current_user()
+    if not user or user.rol != "direccion":
+        return {"error": "No autorizado"}, 401
+
+    try:
+        resultado = CursoService.cumplimiento_plan_estudios(
+            query.plan_estudios_id, query.periodo_academico_id
+        )
+    except ValueError as e:
+        return {"error": str(e)}, 400
+
+    return resultado, 200

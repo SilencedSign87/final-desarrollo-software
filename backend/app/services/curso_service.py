@@ -6,6 +6,8 @@ from ..models.detalle_matricula import DetalleMatricula
 from ..models.matricula import Matricula
 from ..models.seccion import Seccion
 from ..models.estudiante import Estudiante
+from ..models.plan_estudio import PlanEstudio
+from ..models.periodo_academico import PeriodoAcademico
 
 NOTA_MINIMA_APROBATORIA = Decimal("10.5")
 
@@ -118,3 +120,69 @@ class CursoService:
         db.session.delete(curso)
         db.session.commit()
         return True
+
+    @staticmethod
+    def listar_planes_estudio():
+        """Lista breve de planes de estudio, para selects en el frontend (ej. cumplimiento de plan)."""
+        planes = PlanEstudio.query.all()
+        return [
+            {
+                "id": p.id,
+                "especialidad_nombre": p.especialidad.nombre,
+                "version": p.version,
+                "anio": p.anio,
+                "estado": p.estado,
+            }
+            for p in planes
+        ]
+
+    @staticmethod
+    def cumplimiento_plan_estudios(plan_estudios_id, periodo_academico_id=None):
+        plan = PlanEstudio.query.get(plan_estudios_id)
+        if not plan:
+            raise ValueError("El plan de estudios no existe")
+
+        if periodo_academico_id is None:
+            periodo_activo = PeriodoAcademico.query.filter_by(estado="activo").first()
+            periodo_academico_id = periodo_activo.id if periodo_activo else None
+        if periodo_academico_id is None:
+            raise ValueError("No hay un periodo académico activo y no se indicó ninguno")
+
+        cursos = Curso.query.filter_by(plan_estudios_id=plan_estudios_id).order_by(
+            Curso.semestre_num, Curso.nombre
+        ).all()
+
+        detalle = []
+        for curso in cursos:
+            secciones = Seccion.query.filter_by(
+                curso_id=curso.id, periodo_academico_id=periodo_academico_id
+            ).all()
+
+            if not secciones:
+                estado = "sin_seccion"
+            elif not any(s.docente_id is not None for s in secciones):
+                estado = "sin_docente"
+            else:
+                estado = "cumple"
+
+            detalle.append({
+                "curso_id": curso.id,
+                "curso_nombre": curso.nombre,
+                "semestre_num": curso.semestre_num,
+                "total_secciones": len(secciones),
+                "estado": estado,
+            })
+
+        resumen = {
+            "total_cursos": len(detalle),
+            "cumple": sum(1 for d in detalle if d["estado"] == "cumple"),
+            "sin_docente": sum(1 for d in detalle if d["estado"] == "sin_docente"),
+            "sin_seccion": sum(1 for d in detalle if d["estado"] == "sin_seccion"),
+        }
+
+        return {
+            "plan_estudios_id": plan.id,
+            "periodo_academico_id": periodo_academico_id,
+            "resumen": resumen,
+            "cursos": detalle,
+        }
