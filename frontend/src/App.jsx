@@ -56,7 +56,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="dashboard" element={<EstudianteDashboard />} />
             <Route path="matricula" element={<EstudianteMatricula />} />
             <Route path="record-academico" element={<EstudianteRecordAcademico />} />
             <Route path="documentos" element={<EstudianteDocumentos />} />
@@ -72,10 +71,10 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="dashboard" element={<DocenteDashboard />} />
             <Route path="cursos" element={<CursosDocente />} />
             <Route path="secciones" element={<SeccionesDocente />} />
             <Route path="notas" element={<NotasDocente />} />
+            <Route path="*" element={<Navigate to="/docente/cursos" />} />
           </Route>
 
           {/* Administrador */}
@@ -87,7 +86,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="dashboard" element={<AdministrativoDashboard />} />
             <Route path="matricula" element={<AdministrativoMatricula />} />
             <Route path="cursos" element={<AdministrativoCursos />} />
             <Route path="notas" element={<NotasAdministrativo />} />
@@ -96,6 +94,7 @@ function App() {
             <Route path="secciones" element={<AdministrativoSecciones />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
             <Route path="seguridad" element={<AdministrativoSeguridad />} />
+            <Route path="*" element={<Navigate to="/administrador/matricula" />} />
           </Route>
 
           {/* Director */}
@@ -107,7 +106,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="dashboard" element={<DireccionDashboard />} />
             <Route path="matricula" element={<DireccionMatricula />} />
             <Route path="notas" element={<DireccionNotas />} />
             <Route path="record-academico" element={<DireccionRecordAcademico />} />
@@ -115,6 +113,7 @@ function App() {
             <Route path="cumplimiento-plan" element={<CumplimientoPlan />} />
             <Route path="documentos" element={<DireccionDocumentos />} />
             <Route path="auditorias" element={<DireccionAuditorias />} />
+            <Route path="*" element={<Navigate to="/direccion/matricula" />} />
           </Route>
         </Routes>
       </BrowserRouter>
