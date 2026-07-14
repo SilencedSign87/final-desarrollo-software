@@ -26,7 +26,9 @@ class SilaboUpload(BaseModel):
 class SeccionResponse(BaseModel):
     id: int
     curso_id: int
+    curso_nombre: Optional[str] = None
     docente_id: Optional[int] = None
+    docente_nombre: Optional[str] = None
     periodo_academico_id: int
     nombre: str
     aforo: int

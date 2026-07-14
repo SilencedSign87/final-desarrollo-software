@@ -21,6 +21,7 @@ class SeccionAsignadaResponse(BaseModel):
 class DocenteResponse(BaseModel):
     id: int
     user_id: int
+    user_nombre: Optional[str] = None
     categoria: str
     total_secciones: int = 0
 

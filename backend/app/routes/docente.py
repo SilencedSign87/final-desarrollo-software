@@ -24,6 +24,7 @@ def _to_response(docente):
     return DocenteResponse(
         id=docente.id,
         user_id=docente.user_id,
+        user_nombre=f"{docente.user.nombres} {docente.user.apellidos}" if docente.user else None,
         categoria=docente.categoria,
         total_secciones=len(docente.secciones),
     ).model_dump()

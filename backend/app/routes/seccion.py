@@ -41,7 +41,9 @@ def _to_response(seccion):
     return SeccionResponse(
         id=seccion.id,
         curso_id=seccion.curso_id,
+        curso_nombre=seccion.curso.nombre if seccion.curso else None,
         docente_id=seccion.docente_id,
+        docente_nombre=f"{seccion.docente.user.nombres} {seccion.docente.user.apellidos}" if seccion.docente else None,
         periodo_academico_id=seccion.periodo_academico_id,
         nombre=seccion.nombre,
         aforo=seccion.aforo,
