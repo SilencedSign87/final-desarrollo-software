@@ -104,9 +104,6 @@ export default function LoginView() {
                                             error && <p className='mt-2 text-sm text-red-500 text-center'>{error}</p>
                                         }
                                     </form>
-                                    <div className='mt-6 flex flex-col items-center justify-center'>
-                                        <p className='mt-2 text-sm text-gray-500'>¿Olvidó su contraseña? <a href="/reset-password" className='text-blue-500 hover:underline'>Recupérela aquí</a></p>
-                                    </div>
                                 </>
                     }
                 </div>

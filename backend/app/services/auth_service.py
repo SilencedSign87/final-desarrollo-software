@@ -6,7 +6,7 @@ from flask import session
 
 class AuthService:
     @staticmethod
-    def register_user(data):
+    def register_user(data, commit=True):
         hashed = generate_password_hash(data["password"])
         user = User(
             nombres=data["nombres"],
@@ -17,7 +17,10 @@ class AuthService:
             password=hashed,
         )
         db.session.add(user)
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
         return user
     
     @staticmethod

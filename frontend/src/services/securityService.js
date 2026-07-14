@@ -8,6 +8,10 @@ export const getUsers = async () => {
     return apiClient.get('/seguridad/usuarios')
 }
 
+export const createUser = async (data) => {
+    return apiClient.post('/seguridad/usuarios', data)
+}
+
 export const updateUserRole = async (userId, data) => {
     return apiClient.put(`/seguridad/usuarios/${userId}/rol`, data)
 }

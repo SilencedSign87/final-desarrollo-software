@@ -15,7 +15,8 @@ const ACTION_FILTERS = [
     { value: 'login', label: 'Login' },
     { value: 'login_fallido', label: 'Login fallido' },
     { value: 'cambio_rol', label: 'Cambio de rol' },
-    { value: 'autorizar_documento', label: 'Autorizar' },
+    { value: 'crear_usuario', label: 'Crear usuario' },
+    { value: 'autorizar_documento', label: 'Autorizar' }
     { value: 'rechazar_documento', label: 'Rechazar' },
     { value: 'emitir_documento', label: 'Emitir' },
 ]

@@ -4,10 +4,14 @@ from flask_openapi3 import APIBlueprint, Tag
 from ..extensions import db
 from ..middleware import auth_required, roles_required
 from ..models.auditoria_log import AuditoriaLog
+from ..models.docente import Docente
+from ..models.estudiante import Estudiante
+from ..models.plan_estudio import PlanEstudio
 from ..models.solicitud_documento import SolicitudDocumento
 from ..models.user import User
 from ..schemas.generic_schema import ErrorResponse
 from ..schemas.security_schema import (
+    AdminUserCreate,
     AuditoriaLogQuery,
     AuditoriaLogResponse,
     AuditReportResponse,
@@ -16,6 +20,7 @@ from ..schemas.security_schema import (
 )
 from ..schemas.user_schema import UserResponse
 from ..services.audit_service import AuditService
+from ..services.auth_service import AuthService
 from ..utils.datetime_utils import format_lima
 
 security_tag = Tag(
@@ -69,6 +74,52 @@ def list_users():
     """Listar usuarios para gestion de perfiles de acceso."""
     users = User.query.order_by(User.id.asc()).all()
     return {"data": [_serialize_user(user) for user in users]}, 200
+
+
+@security_bp.post(
+    "/usuarios",
+    responses={"201": UserResponse, "400": ErrorResponse, "403": ErrorResponse},
+)
+@roles_required("administrador")
+def create_user(body: AdminUserCreate):
+    """Crear un usuario del sistema (y su perfil academico si aplica)."""
+    if User.query.filter_by(email=body.email).first():
+        return {"error": "El correo electrónico ya está registrado"}, 400
+    if User.query.filter_by(dni=body.dni).first():
+        return {"error": "El DNI ya está registrado"}, 400
+
+    if body.rol == "estudiante":
+        plan = PlanEstudio.query.get(body.plan_estudios_id)
+        if not plan:
+            return {"error": "El plan de estudios no existe"}, 400
+
+    try:
+        user = AuthService.register_user(body.model_dump(), commit=False)
+
+        if body.rol == "estudiante":
+            db.session.add(
+                Estudiante(user_id=user.id, plan_estudios_id=body.plan_estudios_id)
+            )
+        elif body.rol == "docente":
+            db.session.add(
+                Docente(user_id=user.id, categoria=body.categoria or "auxiliar")
+            )
+
+        AuditService.log(
+            accion="crear_usuario",
+            recurso=f"user:{user.id}",
+            detalle=(
+                f"Usuario creado: {user.email} ({user.rol}) "
+                f"por {g.current_user.email}"
+            ),
+            user=g.current_user,
+        )
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return {"error": "No se pudo crear el usuario"}, 400
+
+    return _serialize_user(user), 201
 
 
 @security_bp.put(

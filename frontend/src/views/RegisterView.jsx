@@ -8,13 +8,8 @@ export default function RegisterView() {
 
     const handleSubmit = async (event) => {
         event.preventDefault()
-        if (event.target.dni.value.length < 8) {
-            setError('El DNI debe tener al menos 8 dígitos')
-            return
-        }
-
-        if (parseInt(event.target.dni.value) < 10000000) {
-            setError('El DNI debe ser un número válido')
+        if (!/^\d{8}$/.test(event.target.dni.value.trim())) {
+            setError('El DNI debe tener exactamente 8 dígitos numéricos')
             return
         }
         
@@ -68,7 +63,15 @@ export default function RegisterView() {
                         </label>
                         <label className=' col-span-2 flex flex-col gap-2'>
                             DNI:
-                            <input type="number" name="dni" required />
+                            <input
+                                type="text"
+                                name="dni"
+                                inputMode="numeric"
+                                pattern="\d{8}"
+                                maxLength={8}
+                                title="Exactamente 8 dígitos"
+                                required
+                            />
                         </label>
 
                     </fieldset>

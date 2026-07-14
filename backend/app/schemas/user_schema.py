@@ -7,7 +7,11 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6, description="Contraseña (mín. 6 caracteres)")
     rol: str = Field(..., pattern="^(estudiante|docente|administrador|direccion)$", description="Rol del usuario")
-    dni: str = Field(..., min_length=8, max_length=20, description="DNI del usuario")
+    dni: str = Field(
+        ...,
+        pattern=r"^\d{8}$",
+        description="DNI del usuario (exactamente 8 dígitos)",
+    )
 
 class UserLogin(BaseModel):
     """Schema para iniciar sesión"""

@@ -3,6 +3,7 @@ export const ACTION_LABELS = {
     login_fallido: 'Login fallido',
     logout: 'Logout',
     cambio_rol: 'Cambio de rol',
+    crear_usuario: 'Crear usuario',
     autorizar_documento: 'Autorizar documento',
     rechazar_documento: 'Rechazar documento',
     emitir_documento: 'Emitir documento',
@@ -28,6 +29,11 @@ export const ACTION_STYLES = {
         badge: 'bg-violet-100 text-violet-800 ring-violet-200',
         row: 'bg-violet-50/40',
         dot: 'bg-violet-500',
+    },
+    crear_usuario: {
+        badge: 'bg-teal-100 text-teal-800 ring-teal-200',
+        row: 'bg-teal-50/40',
+        dot: 'bg-teal-500',
     },
     autorizar_documento: {
         badge: 'bg-emerald-100 text-emerald-800 ring-emerald-200',

@@ -149,7 +149,8 @@ export default function AdministrativoDocentes() {
                     <Dialog.Content>
                         {usuariosDocente.length === 0 ? (
                             <p className="text-sm text-neutral-500">
-                                No hay usuarios con rol "docente" sin perfil aún. Regístralos primero desde Seguridad.
+                                No hay usuarios con rol &quot;docente&quot; pendientes de perfil. Al crear un docente desde
+                                Seguridad ya se genera su perfil automáticamente.
                             </p>
                         ) : (
                             <form id="docente-form" className="space-y-4" onSubmit={handleSubmit}>
