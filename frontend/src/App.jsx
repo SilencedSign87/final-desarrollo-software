@@ -11,6 +11,7 @@ import AdministrativoDashboard from "./views/Administrativo/Dashboard"
 import AdministrativoDocumentos from "./views/Administrativo/Documentos"
 import AdministrativoSeguridad from "./views/Administrativo/Seguridad"
 import EstudianteShell from "./views/Estudiante/EstudianteShell"
+import EstudianteRecordAcademico from "./views/Estudiante/EstudianteRecordAcademico"
 import AdministrativoShell from "./views/Administrativo/AdministraticoShell"
 import DireccionShell from "./views/Direccion/DireccionShell"
 import DireccionDashboard from "./views/Direccion/Dashboard"
@@ -57,6 +58,7 @@ function App() {
           >
             <Route path="dashboard" element={<EstudianteDashboard />} />
             <Route path="matricula" element={<EstudianteMatricula />} />
+            <Route path="record-academico" element={<EstudianteRecordAcademico />} />
             <Route path="documentos" element={<EstudianteDocumentos />} />
             <Route path="notas" element={<NotasEstudiante />} />
           </Route>
