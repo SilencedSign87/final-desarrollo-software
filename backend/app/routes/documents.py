@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload
 from ..extensions import db
 from ..middleware import auth_required, roles_required
 from ..models.estudiante import Estudiante
+from ..models.especialidad import Especialidad
 from ..models.plan_estudio import PlanEstudio
 from ..models.solicitud_documento import SolicitudDocumento
 from ..schemas.document_schema import (
@@ -65,7 +66,8 @@ def _get_solicitud_with_relations(solicitud_id: int):
             joinedload(SolicitudDocumento.estudiante).joinedload(Estudiante.user),
             joinedload(SolicitudDocumento.estudiante)
             .joinedload(Estudiante.plan_estudio)
-            .joinedload(PlanEstudio.especialidad),
+            .joinedload(PlanEstudio.especialidad)
+            .joinedload(Especialidad.facultad),
         )
         .filter_by(id=solicitud_id)
         .first()

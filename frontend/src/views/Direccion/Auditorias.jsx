@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import AuditLogsTable from '../../components/security/AuditLogsTable'
 import AuditSummaryCards from '../../components/security/AuditSummaryCards'
+import AuditLegend from '../../components/security/AuditLegend'
+import { getActionStyle } from '../../components/security/auditStyles'
 import Spinner from '../../components/Spinner'
 import {
     getAuditLogs,
@@ -81,6 +83,7 @@ export default function DireccionAuditorias() {
                             <label className="flex items-center gap-2 text-sm text-neutral-600">
                                 Filtrar
                                 <select
+                                    className="rounded-md border border-neutral-300 bg-white px-2 py-1.5"
                                     value={accion}
                                     onChange={(event) => {
                                         setPage(1)
@@ -95,6 +98,8 @@ export default function DireccionAuditorias() {
                                 </select>
                             </label>
                         </div>
+
+                        <AuditLegend />
 
                         <AuditLogsTable
                             logs={logs}
@@ -128,11 +133,15 @@ export default function DireccionAuditorias() {
                         )}
                     </div>
 
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-slate-900">Historial de cambios de rol</h3>
+                    <div className="space-y-4 rounded-lg border border-violet-200 bg-violet-50/30 p-4">
+                        <div className="flex items-center gap-2">
+                            <span className={`h-2.5 w-2.5 rounded-full ${getActionStyle('cambio_rol').dot}`} />
+                            <h3 className="text-lg font-semibold text-violet-900">Historial de cambios de rol</h3>
+                        </div>
                         <AuditLogsTable
                             logs={roleChanges}
                             emptyMessage="No se han registrado cambios de rol."
+                            highlightRoleChanges
                         />
                     </div>
                 </>
