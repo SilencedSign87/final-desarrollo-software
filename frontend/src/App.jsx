@@ -16,6 +16,9 @@ import DireccionShell from "./views/Direccion/DireccionShell"
 import DireccionDashboard from "./views/Direccion/Dashboard"
 import DireccionDocumentos from "./views/Direccion/Documentos"
 import DireccionAuditorias from "./views/Direccion/Auditorias"
+import DireccionNotas from "./views/Direccion/DireccionNotas"
+import AdministrativoRecordAcademico from "./views/Administrativo/AdministrativoRecordAcademico"
+import DireccionRecordAcademico from "./views/Direccion/DireccionRecordAcademico"
 import RegisterView from "./views/RegisterView"
 import CursosDocente from "./views/Docente/CursosDocente"
 import SeccionesDocente from "./views/Docente/SeccionesDocente"
@@ -85,6 +88,8 @@ function App() {
             <Route path="dashboard" element={<AdministrativoDashboard />} />
             <Route path="matricula" element={<AdministrativoMatricula />} />
             <Route path="cursos" element={<AdministrativoCursos />} />
+            <Route path="notas" element={<NotasAdministrativo />} />
+            <Route path="record-academico" element={<AdministrativoRecordAcademico />} />
             <Route path="docentes" element={<AdministrativoDocentes />} />
             <Route path="secciones" element={<AdministrativoSecciones />} />
             <Route path="documentos" element={<AdministrativoDocumentos />} />
@@ -102,6 +107,8 @@ function App() {
           >
             <Route path="dashboard" element={<DireccionDashboard />} />
             <Route path="matricula" element={<DireccionMatricula />} />
+            <Route path="notas" element={<DireccionNotas />} />
+            <Route path="record-academico" element={<DireccionRecordAcademico />} />
             <Route path="carga-docente" element={<DireccionCargaDocente />} />
             <Route path="cumplimiento-plan" element={<CumplimientoPlan />} />
             <Route path="documentos" element={<DireccionDocumentos />} />

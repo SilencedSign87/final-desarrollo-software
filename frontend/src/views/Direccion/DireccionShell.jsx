@@ -1,4 +1,4 @@
-import { BarChart3, FileText, LayoutDashboard, ClipboardList, GraduationCap, ClipboardCheck } from "lucide-react"
+import { BarChart3, FileText, LayoutDashboard, ClipboardList, GraduationCap, ClipboardCheck, Table, ChartNoAxesCombined } from "lucide-react"
 import { Outlet } from "react-router-dom"
 import DashboardShell from "../../components/DashboardShell"
 import LogoutButton from "../../components/LogoutButton"
@@ -7,6 +7,8 @@ import { useAuth } from "../../context/AuthContext"
 const routes = [
     { path: '/direccion/dashboard', icon: LayoutDashboard, name: 'Dashboard' },
     { path: '/direccion/matricula', icon: ClipboardList, name: 'Matrícula' },
+    { path: '/direccion/notas', icon: Table, name: 'Notas' },
+    { path: '/direccion/record-academico', icon: ChartNoAxesCombined, name: 'Record Académico' },
     { path: '/direccion/carga-docente', icon: GraduationCap, name: 'Carga Docente' },
     { path: '/direccion/cumplimiento-plan', icon: ClipboardCheck, name: 'Cumplimiento Plan' },
     { path: '/direccion/documentos', icon: FileText, name: 'Documentos' },
