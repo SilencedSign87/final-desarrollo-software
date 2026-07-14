@@ -39,9 +39,8 @@ def create_app():
     @app.cli.command("seed")
     def seed_command():
         """Crea usuarios por defecto si no existen."""
-        from .seed import seed_default_users, seed_test_data
-        seed_default_users()
-        seed_test_data()
+        from .seed import run
+        run()
 
 
     # Registro de modelos
