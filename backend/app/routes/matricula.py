@@ -12,7 +12,6 @@ from ..schemas.generic_schema import ErrorResponse
 from ..services.matricula_service import MatriculaService
 from ..services.auth_service import AuthService
 from ..services.file_service import FileService
-from ..utils.url_utils import public_api_url
 
 matricula_tag = Tag(name="Matrícula", description="Gestión de matrícula de estudiantes")
 
@@ -28,13 +27,14 @@ class MatriculaQuery(BaseModel):
 
 
 def _comprobante_public_url(matricula):
+    """Ruta relativa para que el frontend la resuelva con VITE_API_URL."""
     if not matricula.comprobante_url:
         return None
-    if matricula.comprobante_url.startswith("http"):
-        return matricula.comprobante_url
-    if matricula.comprobante_url.startswith("/api/"):
-        return public_api_url(matricula.comprobante_url)
-    return public_api_url(f"/api/matriculas/{matricula.id}/comprobante")
+    stored = matricula.comprobante_url
+    # Solo conservar URLs externas reales (no nuestros endpoints absolutos/localhost)
+    if stored.startswith("http") and "/api/matriculas/" not in stored:
+        return stored
+    return f"/api/matriculas/{matricula.id}/comprobante"
 
 
 def _to_response(matricula):

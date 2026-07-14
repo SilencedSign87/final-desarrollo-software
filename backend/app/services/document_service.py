@@ -503,7 +503,8 @@ class DocumentService:
 
         doc.build(content)
 
-        return cls.build_download_url(solicitud.id), qr_hash, firma_info
+        # Guardar ruta relativa: la URL absoluta del QR ya va dentro del PDF
+        return f"/api/documentos/solicitudes/{solicitud.id}/archivo", qr_hash, firma_info
 
     @classmethod
     def get_pdf_path(cls, solicitud_id: int) -> Path | None:

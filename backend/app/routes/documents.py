@@ -25,7 +25,7 @@ from ..services.file_service import FileService
 from ..services.signature_service import SignatureService
 from ..services.tipo_documento_service import TipoDocumentoService
 from ..services.audit_service import AuditService
-from ..utils.url_utils import public_api_url
+
 
 documents_tag = Tag(
     name="Certificados y Documentos",
@@ -36,23 +36,23 @@ documents_bp = APIBlueprint("documents", __name__, abp_tags=[documents_tag])
 
 
 def _comprobante_public_url(solicitud):
+    """Ruta relativa para que el frontend la resuelva con VITE_API_URL."""
     if not solicitud.comprobante_url:
         return None
-    if solicitud.comprobante_url.startswith("http"):
-        return solicitud.comprobante_url
-    if solicitud.comprobante_url.startswith("/api/"):
-        return public_api_url(solicitud.comprobante_url)
-    return public_api_url(f"/api/documentos/solicitudes/{solicitud.id}/comprobante")
+    stored = solicitud.comprobante_url
+    if stored.startswith("http") and "/api/documentos/" not in stored:
+        return stored
+    return f"/api/documentos/solicitudes/{solicitud.id}/comprobante"
 
 
 def _archivo_public_url(solicitud):
+    """Ruta relativa; ignora hosts localhost guardados al emitir."""
     if not solicitud.archivo_url:
         return None
-    if solicitud.archivo_url.startswith("http"):
-        return solicitud.archivo_url
-    if solicitud.archivo_url.startswith("/api/"):
-        return public_api_url(solicitud.archivo_url)
-    return public_api_url(f"/api/documentos/solicitudes/{solicitud.id}/archivo")
+    stored = solicitud.archivo_url
+    if stored.startswith("http") and "/api/documentos/" not in stored:
+        return stored
+    return f"/api/documentos/solicitudes/{solicitud.id}/archivo"
 
 
 def _serialize_solicitud(solicitud):

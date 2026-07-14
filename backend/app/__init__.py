@@ -1,6 +1,7 @@
 import os
 from flask import app
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 from .config import Config
 from .extensions import db, migrate
 from flask_openapi3 import OpenAPI, Info, Tag
@@ -21,6 +22,8 @@ def create_app():
 
     app = OpenAPI(__name__, info=info, doc_prefix="/docs")
     app.config.from_object(Config)
+    # Render / proxies: confiar en X-Forwarded-* para armar URLs públicas (QR, etc.)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     # Inicializar extensiones
     db.init_app(app)
