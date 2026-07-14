@@ -678,5 +678,3 @@ def update_user_role(path: UserIdPath, body: RoleUpdate):
 | Seguridad | `audit_service.py`, `routes/security.py`, `middleware/auth.py` | `Seguridad.jsx`, `Auditorias.jsx`, `securityService.js` |
 
 ---
-
-*Documento generado a partir del código del repositorio. Para una versión orientada a diapositivas, ver también `README-MODULOS.md`.*
