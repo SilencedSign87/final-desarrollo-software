@@ -4,7 +4,6 @@ import LogoutButton from "../../components/LogoutButton"
 import { Outlet } from "react-router-dom"
 
 const routes = [
-    { path: '/docente/dashboard', icon: LayoutDashboard, name: 'Dashboard' },
     {path: '/docente/secciones', icon: DoorClosed, name: 'Secciones' },
     { path: '/docente/cursos', icon: BookOpen, name: 'Cursos' },
     { path: '/docente/notas', icon: Table, name: 'Notas' },
