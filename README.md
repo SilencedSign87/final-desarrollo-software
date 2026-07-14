@@ -2,7 +2,7 @@
 
 ## Equipo
 
-- Alaracon Mendoza Estiven Rodrigo
+- Alarcon Mendoza Estiven Rodrigo
 - Araujo Champi José Eduardo
 - Diaz Vega Bruno Nivardo
 
