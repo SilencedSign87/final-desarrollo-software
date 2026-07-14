@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Shield } from 'lucide-react'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { getUsers, updateUserRole } from '../../services/securityService'
 
 const ROLES = [

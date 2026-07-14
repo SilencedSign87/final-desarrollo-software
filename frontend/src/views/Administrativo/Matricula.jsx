@@ -3,7 +3,7 @@ import { Check, X } from 'lucide-react'
 import MatriculasTable from '../../components/matricula/MatriculasTable'
 import PeriodoPagoConfig from '../../components/matricula/PeriodoPagoConfig'
 import Dialog from '../../components/Dialog'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { getMatriculas, validarMatricula } from '../../services/matriculaService'
 
 const FILTROS = [

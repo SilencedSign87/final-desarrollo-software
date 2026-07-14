@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ClipboardCheck } from 'lucide-react'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { getPlanesEstudio, getCumplimientoPlan } from '../../services/cursos'
 import { PeriodoAcademicoService } from '../../services/periodoAcademicoService'
 

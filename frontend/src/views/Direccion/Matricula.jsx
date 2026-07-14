@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import MatriculaSummaryCards from '../../components/matricula/MatriculaSummaryCards'
 import PeriodoPagoConfig from '../../components/matricula/PeriodoPagoConfig'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { getMatriculaEstadisticas } from '../../services/matriculaService'
 
 export default function DireccionMatricula() {

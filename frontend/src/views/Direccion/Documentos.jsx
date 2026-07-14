@@ -4,7 +4,7 @@ import DocumentPagination from '../../components/documents/DocumentPagination'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
 import TipoDocumentoPagoConfig from '../../components/documents/TipoDocumentoPagoConfig'
 import Dialog from '../../components/Dialog'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { authorizeDocumentRequest, getDocumentRequests } from '../../services/documentsService'
 
 const PER_PAGE = 10

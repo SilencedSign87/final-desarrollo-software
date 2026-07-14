@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { GraduationCap, Plus } from 'lucide-react'
 import Dialog from '../../components/Dialog'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { DocenteService } from '../../services/docenteService'
 import { getUsers } from '../../services/securityService'
 

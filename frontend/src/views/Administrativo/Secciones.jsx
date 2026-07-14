@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CalendarClock, Layers, Pencil, Plus, Trash2 } from 'lucide-react'
 import Dialog from '../../components/Dialog'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { SeccionService } from '../../services/seccionService'
 import { HorarioService } from '../../services/horarioService'
 import { DocenteService } from '../../services/docenteService'

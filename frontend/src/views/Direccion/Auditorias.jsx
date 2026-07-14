@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import AuditLogsTable from '../../components/security/AuditLogsTable'
 import AuditSummaryCards from '../../components/security/AuditSummaryCards'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import {
     getAuditLogs,
     getAuditSummary,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BookOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 import Dialog from '../../components/Dialog'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { getCursos, createCurso, updateCurso, deleteCurso } from '../../services/cursos'
 
 const EMPTY_FORM = {

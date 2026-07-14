@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CalendarClock, Layers, Upload } from 'lucide-react'
 import Dialog from '../../components/Dialog'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { DocenteService } from '../../services/docenteService'
 import { SeccionService } from '../../services/seccionService'
 import { HorarioService } from '../../services/horarioService'

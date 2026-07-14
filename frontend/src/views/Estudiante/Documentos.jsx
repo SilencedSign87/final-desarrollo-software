@@ -3,7 +3,7 @@ import { FileText, Plus } from 'lucide-react'
 import DocumentPagination from '../../components/documents/DocumentPagination'
 import DocumentRequestsTable from '../../components/documents/DocumentRequestsTable'
 import Dialog from '../../components/Dialog'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { createDocumentRequest, getDocumentRequests } from '../../services/documentsService'
 import { getTiposDocumento } from '../../services/tipoDocumentoService'
 

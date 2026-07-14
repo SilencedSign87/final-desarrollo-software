@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { healthCheck } from '../services/api'
 import { useAuth } from '../context/AuthContext'
-import Spinner from '../components/spinner'
+import Spinner from '../components/Spinner'
 import { useNavigate } from 'react-router-dom'
 import { AtSign, KeyRound } from 'lucide-react'
 

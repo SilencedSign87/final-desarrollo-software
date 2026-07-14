@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BookOpen } from 'lucide-react'
-import Spinner from '../../components/spinner'
+import Spinner from '../../components/Spinner'
 import { DocenteService } from '../../services/docenteService'
 import { PeriodoAcademicoService } from '../../services/periodoAcademicoService'
 
