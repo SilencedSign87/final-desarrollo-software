@@ -1,4 +1,4 @@
-from flask import g
+from flask import current_app, g
 from flask_openapi3 import APIBlueprint, Tag
 
 from ..extensions import db
@@ -77,7 +77,7 @@ def list_users():
 
 
 @security_bp.post(
-    "/usuarios",
+    "/usuarios/crear",
     responses={"201": UserResponse, "400": ErrorResponse, "403": ErrorResponse},
 )
 @roles_required("administrador")
@@ -94,7 +94,15 @@ def create_user(body: AdminUserCreate):
             return {"error": "El plan de estudios no existe"}, 400
 
     try:
-        user = AuthService.register_user(body.model_dump(), commit=False)
+        user_data = {
+            "nombres": body.nombres,
+            "apellidos": body.apellidos,
+            "email": body.email,
+            "password": body.password,
+            "rol": body.rol,
+            "dni": body.dni,
+        }
+        user = AuthService.register_user(user_data, commit=False)
 
         if body.rol == "estudiante":
             db.session.add(
@@ -115,9 +123,10 @@ def create_user(body: AdminUserCreate):
             user=g.current_user,
         )
         db.session.commit()
-    except Exception:
+    except Exception as exc:
         db.session.rollback()
-        return {"error": "No se pudo crear el usuario"}, 400
+        current_app.logger.exception("Error al crear usuario")
+        return {"error": f"No se pudo crear el usuario: {exc}"}, 400
 
     return _serialize_user(user), 201
 

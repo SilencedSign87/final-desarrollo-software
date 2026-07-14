@@ -23,6 +23,62 @@ const EMPTY_FORM = {
     categoria: 'auxiliar',
 }
 
+const FIELD_LABELS = {
+    nombres: 'Nombres',
+    apellidos: 'Apellidos',
+    email: 'Correo',
+    password: 'Contraseña',
+    dni: 'DNI',
+    rol: 'Rol',
+    plan_estudios_id: 'Plan de estudios',
+    categoria: 'Categoría',
+}
+
+function extractCreateUserError(requestError) {
+    const status = requestError.response?.status
+    const data = requestError.response?.data
+
+    if (status === 401) return 'Sesión expirada. Vuelve a iniciar sesión.'
+    if (status === 403) return 'No tienes permisos para crear usuarios.'
+    if (status === 404) return 'El endpoint de creación no está disponible. Reinicia el backend.'
+
+    if (typeof data?.error === 'string') {
+        return data.error
+    }
+    if (typeof data?.message === 'string') {
+        return data.message
+    }
+
+    const items = Array.isArray(data) ? data : data?.detail
+    if (Array.isArray(items) && items.length) {
+        return items
+            .map((item) => {
+                const field = Array.isArray(item.loc)
+                    ? item.loc.filter((part) => part !== 'body').join('.')
+                    : ''
+                const label = FIELD_LABELS[field] || field
+                let msg = item.msg || 'Dato inválido'
+                if (field === 'dni' || String(msg).includes('pattern')) {
+                    msg = 'debe tener exactamente 8 dígitos numéricos'
+                }
+                if (String(msg).includes('plan de estudios')) {
+                    return String(msg).replace(/^Value error,\s*/i, '')
+                }
+                if (String(msg).toLowerCase().includes('email')) {
+                    msg = 'formato de correo inválido'
+                }
+                return label ? `${label}: ${msg}` : msg
+            })
+            .join(' · ')
+    }
+
+    if (!requestError.response) {
+        return 'No hay conexión con el servidor'
+    }
+
+    return `No se pudo crear el usuario (HTTP ${status || '?'})`
+}
+
 export default function AdministrativoSeguridad() {
     const [users, setUsers] = useState([])
     const [planes, setPlanes] = useState([])
@@ -32,45 +88,54 @@ export default function AdministrativoSeguridad() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [form, setForm] = useState(EMPTY_FORM)
     const [error, setError] = useState(null)
+    const [formError, setFormError] = useState(null)
     const [success, setSuccess] = useState(null)
 
     const loadUsers = useCallback(async ({ showLoading = false } = {}) => {
-        if (showLoading) {
-            setIsLoading(true)
-        }
-        setError(null)
+        if (showLoading) setIsLoading(true)
         try {
             const response = await getUsers()
             setUsers(response.data.data ?? [])
         } catch (requestError) {
             setError(requestError.response?.data?.error ?? 'No se pudieron cargar los usuarios')
         } finally {
-            if (showLoading) {
-                setIsLoading(false)
-            }
+            if (showLoading) setIsLoading(false)
         }
     }, [])
 
     useEffect(() => {
         let active = true
 
-        Promise.all([getUsers(), getPlanesEstudio()])
-            .then(([usersResponse, planesResponse]) => {
-                if (!active) return
-                setUsers(usersResponse.data.data ?? [])
-                setPlanes(planesResponse.data ?? [])
-            })
-            .catch((requestError) => {
+        const load = async () => {
+            setIsLoading(true)
+            try {
+                const usersResponse = await getUsers()
+                if (active) {
+                    setUsers(usersResponse.data.data ?? [])
+                    setError(null)
+                }
+            } catch (requestError) {
                 if (active) {
                     setError(requestError.response?.data?.error ?? 'No se pudieron cargar los usuarios')
                 }
-            })
-            .finally(() => {
-                if (active) {
-                    setIsLoading(false)
-                }
-            })
+            }
 
+            try {
+                const planesResponse = await getPlanesEstudio()
+                if (active) {
+                    const list = Array.isArray(planesResponse.data)
+                        ? planesResponse.data
+                        : planesResponse.data?.data ?? []
+                    setPlanes(list)
+                }
+            } catch {
+                if (active) setPlanes([])
+            } finally {
+                if (active) setIsLoading(false)
+            }
+        }
+
+        load()
         return () => {
             active = false
         }
@@ -96,7 +161,7 @@ export default function AdministrativoSeguridad() {
             ...EMPTY_FORM,
             plan_estudios_id: planes[0]?.id ? String(planes[0].id) : '',
         })
-        setError(null)
+        setFormError(null)
         setSuccess(null)
         setDialogOpen(true)
     }
@@ -108,26 +173,45 @@ export default function AdministrativoSeguridad() {
     const handleCreateUser = async (event) => {
         event.preventDefault()
         setIsSubmitting(true)
-        setError(null)
+        setFormError(null)
         setSuccess(null)
 
-        if (!/^\d{8}$/.test(form.dni.trim())) {
-            setError('El DNI debe tener exactamente 8 dígitos numéricos')
+        const nombres = form.nombres.trim()
+        const apellidos = form.apellidos.trim()
+        const email = form.email.trim().toLowerCase()
+        const dni = form.dni.trim()
+
+        if (!nombres || !apellidos) {
+            setFormError('Completa nombres y apellidos')
             setIsSubmitting(false)
             return
         }
-
+        if (!email.includes('@')) {
+            setFormError('Ingresa un correo válido')
+            setIsSubmitting(false)
+            return
+        }
+        if (!/^\d{8}$/.test(dni)) {
+            setFormError('El DNI debe tener exactamente 8 dígitos numéricos')
+            setIsSubmitting(false)
+            return
+        }
         if (form.password.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres')
+            setFormError('La contraseña debe tener al menos 6 caracteres')
+            setIsSubmitting(false)
+            return
+        }
+        if (form.rol === 'estudiante' && !form.plan_estudios_id) {
+            setFormError('Selecciona un plan de estudios para el estudiante')
             setIsSubmitting(false)
             return
         }
 
         const payload = {
-            nombres: form.nombres.trim(),
-            apellidos: form.apellidos.trim(),
-            email: form.email.trim(),
-            dni: form.dni.trim(),
+            nombres,
+            apellidos,
+            email,
+            dni,
             password: form.password,
             rol: form.rol,
         }
@@ -142,12 +226,10 @@ export default function AdministrativoSeguridad() {
         try {
             await createUser(payload)
             setDialogOpen(false)
-            setSuccess('Usuario creado correctamente')
+            setSuccess(`Usuario ${email} creado correctamente`)
             await loadUsers({ showLoading: true })
         } catch (requestError) {
-            const apiError = requestError.response?.data?.error
-            const validation = requestError.response?.data?.message
-            setError(apiError || validation || 'No se pudo crear el usuario')
+            setFormError(extractCreateUserError(requestError))
         } finally {
             setIsSubmitting(false)
         }
@@ -231,7 +313,17 @@ export default function AdministrativoSeguridad() {
                 <Dialog.Surface>
                     <Dialog.Header>Crear usuario</Dialog.Header>
                     <Dialog.Content>
-                        <form id="create-user-form" className="grid min-w-[320px] gap-3 sm:min-w-[420px]" onSubmit={handleCreateUser}>
+                        <form
+                            id="create-user-form"
+                            className="grid min-w-[320px] gap-3 sm:min-w-[420px]"
+                            onSubmit={handleCreateUser}
+                            noValidate
+                        >
+                            {formError && (
+                                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                                    {formError}
+                                </p>
+                            )}
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <label className="flex flex-col gap-1 text-sm">
                                     Nombres
@@ -262,14 +354,12 @@ export default function AdministrativoSeguridad() {
                                 />
                             </label>
                             <label className="flex flex-col gap-1 text-sm">
-                                DNI
+                                DNI (8 dígitos)
                                 <input
                                     type="text"
                                     inputMode="numeric"
-                                    pattern="\d{8}"
                                     maxLength={8}
                                     required
-                                    title="Exactamente 8 dígitos"
                                     value={form.dni}
                                     onChange={(event) => {
                                         const onlyDigits = event.target.value.replace(/\D/g, '').slice(0, 8)
@@ -343,7 +433,13 @@ export default function AdministrativoSeguridad() {
                         >
                             {isSubmitting ? 'Creando...' : 'Crear usuario'}
                         </button>
-                        <Dialog.Trigger className="subtle">Cancelar</Dialog.Trigger>
+                        <button
+                            type="button"
+                            className="subtle"
+                            onClick={() => setDialogOpen(false)}
+                        >
+                            Cancelar
+                        </button>
                     </Dialog.Footer>
                 </Dialog.Surface>
             </Dialog>

@@ -9,7 +9,7 @@ export const getUsers = async () => {
 }
 
 export const createUser = async (data) => {
-    return apiClient.post('/seguridad/usuarios', data)
+    return apiClient.post('/seguridad/usuarios/crear', data)
 }
 
 export const updateUserRole = async (userId, data) => {
