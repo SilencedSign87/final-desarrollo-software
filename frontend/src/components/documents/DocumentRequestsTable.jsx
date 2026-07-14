@@ -1,6 +1,5 @@
 import DocumentStatusBadge from './DocumentStatusBadge'
-import { resolveApiUrl } from '../../services/api'
-import { getDocumentComprobanteUrl, getDocumentDownloadUrl } from '../../services/documentsService'
+import { getDocumentDownloadUrl, verComprobante } from '../../services/documentsService'
 
 export default function DocumentRequestsTable({
     requests,
@@ -71,16 +70,13 @@ export default function DocumentRequestsTable({
                             {showComprobante && (
                                 <td className="px-4 py-3">
                                     {request.comprobante_url ? (
-                                        <a
-                                            href={resolveApiUrl(
-                                                request.comprobante_url || getDocumentComprobanteUrl(request.id)
-                                            )}
+                                        <button
+                                            type="button"
                                             className="text-blue-700 hover:underline"
-                                            target="_blank"
-                                            rel="noreferrer"
+                                            onClick={() => verComprobante(request.id)}
                                         >
                                             Ver comprobante
-                                        </a>
+                                        </button>
                                     ) : (
                                         <span className="text-xs text-neutral-500">No aplica</span>
                                     )}

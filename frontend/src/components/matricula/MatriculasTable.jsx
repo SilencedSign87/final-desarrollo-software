@@ -1,6 +1,5 @@
 import MatriculaStatusBadge from './MatriculaStatusBadge'
-import { resolveApiUrl } from '../../services/api'
-import { getFichaDownloadUrl } from '../../services/matriculaService'
+import { getFichaDownloadUrl, verComprobanteMatricula } from '../../services/matriculaService'
 
 export default function MatriculasTable({ matriculas, emptyMessage, actions, showFicha = false }) {
     if (!matriculas?.length) {
@@ -32,10 +31,6 @@ export default function MatriculasTable({ matriculas, emptyMessage, actions, sho
                 </thead>
                 <tbody className="divide-y divide-neutral-200 bg-white">
                     {matriculas.map((matricula) => {
-                        const comprobanteHref = matricula.comprobante_url
-                            ? resolveApiUrl(matricula.comprobante_url)
-                            : null
-
                         return (
                             <tr key={matricula.id}>
                                 <td className="px-4 py-3 text-neutral-900">{matricula.id}</td>
@@ -61,15 +56,14 @@ export default function MatriculasTable({ matriculas, emptyMessage, actions, sho
                                     <MatriculaStatusBadge status={matricula.estado} />
                                 </td>
                                 <td className="px-4 py-3">
-                                    {comprobanteHref ? (
-                                        <a
-                                            href={comprobanteHref}
+                                    {matricula.comprobante_url ? (
+                                        <button
+                                            type="button"
                                             className="text-blue-700 hover:underline"
-                                            target="_blank"
-                                            rel="noreferrer"
+                                            onClick={() => verComprobanteMatricula(matricula.id)}
                                         >
                                             Ver comprobante
-                                        </a>
+                                        </button>
                                     ) : (
                                         <span className="text-xs text-neutral-500">No disponible</span>
                                     )}

@@ -40,6 +40,14 @@ export const getDocumentComprobanteUrl = (requestId) => {
     return resolveApiUrl(`/documentos/solicitudes/${requestId}/comprobante`)
 }
 
+export const verComprobante = async (requestId) => {
+    const response = await apiClient.get(`/documentos/solicitudes/${requestId}/comprobante`, {
+        responseType: 'blob',
+    })
+    const blobUrl = URL.createObjectURL(response.data)
+    window.open(blobUrl, '_blank')
+}
+
 export const verifyDocument = async (qrHash) => {
     return apiClient.get(`/documentos/verificar/${qrHash}`)
 }

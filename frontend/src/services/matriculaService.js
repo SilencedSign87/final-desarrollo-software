@@ -37,3 +37,11 @@ export const getFichaDownloadUrl = (matriculaId) => {
 export const getComprobanteDownloadUrl = (matriculaId) => {
     return resolveApiUrl(`/matriculas/${matriculaId}/comprobante`)
 }
+
+export const verComprobanteMatricula = async (matriculaId) => {
+    const response = await apiClient.get(`/matriculas/${matriculaId}/comprobante`, {
+        responseType: 'blob',
+    })
+    const blobUrl = URL.createObjectURL(response.data)
+    window.open(blobUrl, '_blank')
+}
