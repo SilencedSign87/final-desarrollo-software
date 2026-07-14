@@ -1,3 +1,4 @@
+import { formatDateTime } from '../../utils/date'
 import AuditActionBadge from './AuditActionBadge'
 import { getActionStyle } from './auditStyles'
 
@@ -32,9 +33,7 @@ export default function AuditLogsTable({ logs, emptyMessage, highlightRoleChange
                         return (
                             <tr key={log.id} className={rowClass}>
                                 <td className="whitespace-nowrap px-4 py-3 text-neutral-600">
-                                    {log.fecha_creacion
-                                        ? new Date(log.fecha_creacion).toLocaleString()
-                                        : '—'}
+                                    {formatDateTime(log.fecha_creacion)}
                                 </td>
                                 <td className="px-4 py-3">
                                     <AuditActionBadge accion={log.accion} />

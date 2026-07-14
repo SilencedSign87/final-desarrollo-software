@@ -16,6 +16,7 @@ from ..schemas.security_schema import (
 )
 from ..schemas.user_schema import UserResponse
 from ..services.audit_service import AuditService
+from ..utils.datetime_utils import format_lima
 
 security_tag = Tag(
     name="Administracion y Seguridad",
@@ -43,7 +44,7 @@ def _serialize_log(entry: AuditoriaLog):
         accion=entry.accion,
         recurso=entry.recurso,
         detalle=entry.detalle,
-        fecha_creacion=entry.fecha_creacion.isoformat() if entry.fecha_creacion else "",
+        fecha_creacion=format_lima(entry.fecha_creacion),
     ).model_dump()
 
 

@@ -1,6 +1,5 @@
-from datetime import datetime, timezone
-
 from ..extensions import db
+from ..utils.datetime_utils import utc_now_naive
 
 
 class AuditoriaLog(db.Model):
@@ -17,7 +16,7 @@ class AuditoriaLog(db.Model):
     fecha_creacion = db.Column(
         db.DateTime,
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=utc_now_naive,
         index=True,
     )
 

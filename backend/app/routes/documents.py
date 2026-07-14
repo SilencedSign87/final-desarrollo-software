@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from flask import g, request, send_file
+from flask import g, render_template, request, send_file
 from flask_openapi3 import APIBlueprint, Tag
 from sqlalchemy.orm import joinedload
 
@@ -25,6 +25,17 @@ from ..services.file_service import FileService
 from ..services.signature_service import SignatureService
 from ..services.tipo_documento_service import TipoDocumentoService
 from ..services.audit_service import AuditService
+from ..utils.datetime_utils import format_lima
+
+
+def _wants_html() -> bool:
+    """Los navegadores (escaneo de QR) piden HTML; la API puede pedir JSON."""
+    accept = request.headers.get("Accept", "")
+    if "application/json" in accept and "text/html" not in accept:
+        return False
+    if request.args.get("format") == "json":
+        return False
+    return "text/html" in accept or request.args.get("format") == "html" or not accept
 
 
 documents_tag = Tag(
@@ -379,13 +390,20 @@ def verify_document(path: QrVerificacionPath):
     )
 
     if not solicitud:
-        return (
-            DocumentoVerificacionResponse(
-                valido=False,
-                mensaje="Documento no encontrado o codigo invalido",
-            ).model_dump(),
-            404,
-        )
+        payload = DocumentoVerificacionResponse(
+            valido=False,
+            mensaje="No encontramos un documento emitido con este código QR.",
+        ).model_dump()
+        if _wants_html():
+            return (
+                render_template(
+                    "document_verification.html",
+                    qr_hash=path.qr_hash,
+                    **payload,
+                ),
+                404,
+            )
+        return payload, 404
 
     firma_valida = SignatureService.verify_signature(
         solicitud,
@@ -393,21 +411,35 @@ def verify_document(path: QrVerificacionPath):
         solicitud.firma_digital,
     )
     estudiante = solicitud.estudiante.user
-    return (
-        DocumentoVerificacionResponse(
-            valido=True,
-            solicitud_id=solicitud.id,
-            codigo_ticket=solicitud.codigo_ticket,
-            tipo_documento=solicitud.tipo_documento,
-            estudiante=f"{estudiante.nombres} {estudiante.apellidos}",
-            estado=solicitud.estado,
-            fecha_emision=solicitud.fecha_emision or solicitud.fecha_creacion,
-            firma_valida=firma_valida,
-            mensaje=(
-                "Documento valido y emitido por el sistema"
-                if firma_valida
-                else "Documento encontrado, pero la firma digital no es valida"
-            ),
-        ).model_dump(),
-        200,
-    )
+    fecha = solicitud.fecha_emision or solicitud.fecha_creacion
+    payload = DocumentoVerificacionResponse(
+        valido=True,
+        solicitud_id=solicitud.id,
+        codigo_ticket=solicitud.codigo_ticket,
+        tipo_documento=solicitud.tipo_documento,
+        estudiante=f"{estudiante.nombres} {estudiante.apellidos}",
+        estado=solicitud.estado,
+        fecha_emision=fecha,
+        firma_valida=firma_valida,
+        mensaje=(
+            "Documento válido y emitido por el sistema académico."
+            if firma_valida
+            else "El documento existe, pero la firma digital no es válida."
+        ),
+    ).model_dump()
+
+    if _wants_html():
+        return render_template(
+            "document_verification.html",
+            qr_hash=path.qr_hash,
+            valido=payload["valido"],
+            mensaje=payload["mensaje"],
+            tipo_documento=payload["tipo_documento"],
+            estudiante=payload["estudiante"],
+            codigo_ticket=payload["codigo_ticket"],
+            estado=payload["estado"],
+            fecha_emision=format_lima(fecha) if fecha else "—",
+            firma_valida=payload["firma_valida"],
+        )
+
+    return payload, 200

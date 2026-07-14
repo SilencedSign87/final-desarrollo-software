@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verificación de documento</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --ok: #166534;
+      --ok-bg: #dcfce7;
+      --ok-border: #86efac;
+      --bad: #991b1b;
+      --bad-bg: #fee2e2;
+      --bad-border: #fca5a5;
+      --warn: #92400e;
+      --warn-bg: #fef3c7;
+      --warn-border: #fcd34d;
+      --brand: #1e3a5f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #dbeafe 0%, transparent 40%),
+        linear-gradient(180deg, #eef4ff 0%, var(--bg) 45%, #edf2f7 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(100%, 520px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+    .header {
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, #1e3a5f, #274b75);
+      color: #fff;
+    }
+    .header p {
+      margin: 6px 0 0;
+      opacity: 0.85;
+      font-size: 0.92rem;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 650;
+      letter-spacing: 0.01em;
+    }
+    .body { padding: 24px; }
+    .status {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid;
+      margin-bottom: 20px;
+    }
+    .status.ok { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok); }
+    .status.bad { background: var(--bad-bg); border-color: var(--bad-border); color: var(--bad); }
+    .status.warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn); }
+    .status strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+    .status span { display: block; font-size: 0.92rem; line-height: 1.4; }
+    .icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.7);
+    }
+    dl {
+      margin: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .row:last-child { border-bottom: 0; padding-bottom: 0; }
+    dt {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    dd {
+      margin: 0;
+      font-size: 0.95rem;
+      word-break: break-word;
+    }
+    .hint {
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+    .code {
+      margin-top: 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      word-break: break-all;
+    }
+    @media (max-width: 520px) {
+      .row { grid-template-columns: 1fr; gap: 2px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <header class="header">
+      <h1>Universidad Nacional del Centro del Perú</h1>
+      <p>Verificación de documento oficial</p>
+    </header>
+    <section class="body">
+      {% if valido and firma_valida %}
+      <div class="status ok">
+        <div class="icon">✓</div>
+        <div>
+          <strong>Documento válido</strong>
+          <span>{{ mensaje }}</span>
+        </div>
+      </div>
+      {% elif valido and not firma_valida %}
+      <div class="status warn">
+        <div class="icon">!</div>
+        <div>
+          <strong>Documento con observación</strong>
+          <span>{{ mensaje }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="status bad">
+        <div class="icon">✕</div>
+        <div>
+          <strong>No se pudo verificar</strong>
+          <span>{{ mensaje }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if valido %}
+      <dl>
+        <div class="row">
+          <dt>Tipo</dt>
+          <dd>{{ tipo_documento or "—" }}</dd>
+        </div>
+        <div class="row">
+          <dt>Estudiante</dt>
+          <dd>{{ estudiante or "—" }}</dd>
+        </div>
+        <div class="row">
+          <dt>Ticket</dt>
+          <dd>{{ codigo_ticket or "—" }}</dd>
+        </div>
+        <div class="row">
+          <dt>Estado</dt>
+          <dd>{{ estado or "—" }}</dd>
+        </div>
+        <div class="row">
+          <dt>Fecha de emisión</dt>
+          <dd>{{ fecha_emision or "—" }}</dd>
+        </div>
+        <div class="row">
+          <dt>Firma digital</dt>
+          <dd>{{ "Válida" if firma_valida else "No válida" }}</dd>
+        </div>
+      </dl>
+      {% else %}
+      <p class="hint">
+        El código del QR no corresponde a un documento emitido por el sistema,
+        o el registro ya no está disponible. Si el documento es reciente,
+        solicite una nueva emisión al área administrativa.
+      </p>
+      {% endif %}
+
+      <div class="code">Código: {{ qr_hash }}</div>
+    </section>
+  </main>
+</body>
+</html>

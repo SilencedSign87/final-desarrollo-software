@@ -1,9 +1,8 @@
-from datetime import datetime, timezone
-
 from flask import g
 
 from ..extensions import db
 from ..models.auditoria_log import AuditoriaLog
+from ..utils.datetime_utils import utc_now_naive
 
 
 class AuditService:
@@ -21,7 +20,7 @@ class AuditService:
             accion=accion,
             recurso=recurso,
             detalle=detalle[:500],
-            fecha_creacion=datetime.now(timezone.utc),
+            fecha_creacion=utc_now_naive(),
         )
         db.session.add(entry)
         # El commit lo hace el caller para mantener la transacción
