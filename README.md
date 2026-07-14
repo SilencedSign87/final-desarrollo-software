@@ -6,6 +6,12 @@
 - Araujo Champi José Eduardo
 - Diaz Vega Bruno Nivardo
 
+## Documentos
+
+- Link de Canva: https://canva.link/kty7eva0n8661ui
+- Link de Informe: https://uncpedu-my.sharepoint.com/:w:/g/personal/e_2022100525e_uncp_edu_pe/IQAHpbBNRigdQ5s8yAEtRdxvAeuptfVRgnp_bdmwieyBz3w?rtime=f6Fa2dHh3kg
+- Link de Backlog: https://docs.google.com/spreadsheets/d/1AG0BWYBrU_Zk0q2yZsytwZyqst7nVjE4zsl7u0AaB0s/edit?gid=0#gid=0
+- Link de Despliegue: https://frontend-react-ycrw.onrender.com/
 
 ## Tecnologías
 
