@@ -1,3 +1,4 @@
+import os
 from flask import app
 from flask_cors import CORS
 from .config import Config
@@ -13,13 +14,23 @@ def create_app():
 
     from .routes.auth import auth_tag
 
+    frontend_url = os.environ.get(
+        "FRONTEND_URL",
+        "http://localhost:3000"
+    )
+
     app = OpenAPI(__name__, info=info, doc_prefix="/docs")
     app.config.from_object(Config)
 
     # Inicializar extensiones
     db.init_app(app)
     migrate.init_app(app, db)
-    CORS(app)
+
+    CORS(
+        app,
+        supports_credentials=True,
+        origins=[frontend_url]
+    )
 
     # Comandos
     @app.cli.command("seed")
