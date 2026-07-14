@@ -1,4 +1,4 @@
-import { apiClient } from "./api"
+import { apiClient, resolveApiUrl } from "./api"
 
 export const getDocumentRequests = async ({ page = 1, per_page = 10, estado } = {}) => {
     return apiClient.get('/documentos/solicitudes', {
@@ -33,11 +33,11 @@ export const issueDocument = async (requestId) => {
 }
 
 export const getDocumentDownloadUrl = (requestId) => {
-    return `/api/documentos/solicitudes/${requestId}/archivo`
+    return resolveApiUrl(`/documentos/solicitudes/${requestId}/archivo`)
 }
 
 export const getDocumentComprobanteUrl = (requestId) => {
-    return `/api/documentos/solicitudes/${requestId}/comprobante`
+    return resolveApiUrl(`/documentos/solicitudes/${requestId}/comprobante`)
 }
 
 export const verifyDocument = async (qrHash) => {

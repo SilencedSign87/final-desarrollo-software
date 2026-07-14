@@ -12,6 +12,7 @@ from ..schemas.generic_schema import ErrorResponse
 from ..services.matricula_service import MatriculaService
 from ..services.auth_service import AuthService
 from ..services.file_service import FileService
+from ..utils.url_utils import public_api_url
 
 matricula_tag = Tag(name="Matrícula", description="Gestión de matrícula de estudiantes")
 
@@ -29,9 +30,11 @@ class MatriculaQuery(BaseModel):
 def _comprobante_public_url(matricula):
     if not matricula.comprobante_url:
         return None
-    if matricula.comprobante_url.startswith("http") or matricula.comprobante_url.startswith("/api/"):
+    if matricula.comprobante_url.startswith("http"):
         return matricula.comprobante_url
-    return f"/api/matriculas/{matricula.id}/comprobante"
+    if matricula.comprobante_url.startswith("/api/"):
+        return public_api_url(matricula.comprobante_url)
+    return public_api_url(f"/api/matriculas/{matricula.id}/comprobante")
 
 
 def _to_response(matricula):

@@ -1,4 +1,4 @@
-import { apiClient } from "./api"
+import { apiClient, resolveApiUrl } from "./api"
 
 export const getMatriculas = async (estado) => {
     return apiClient.get('/matriculas/', { params: { estado } })
@@ -31,9 +31,9 @@ export const getMatriculaEstadisticas = async () => {
 }
 
 export const getFichaDownloadUrl = (matriculaId) => {
-    return `/api/matriculas/${matriculaId}/ficha`
+    return resolveApiUrl(`/matriculas/${matriculaId}/ficha`)
 }
 
 export const getComprobanteDownloadUrl = (matriculaId) => {
-    return `/api/matriculas/${matriculaId}/comprobante`
+    return resolveApiUrl(`/matriculas/${matriculaId}/comprobante`)
 }

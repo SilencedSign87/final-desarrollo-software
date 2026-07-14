@@ -20,6 +20,7 @@ from ..models.seccion import Seccion
 from ..models.solicitud_documento import SolicitudDocumento
 from ..services.curso_service import CursoService
 from ..services.evaluacion_service import EvaluacionService
+from ..utils.url_utils import public_api_url
 from .signature_service import SignatureService
 
 
@@ -43,12 +44,11 @@ class DocumentService:
 
     @staticmethod
     def build_verification_url(qr_hash: str) -> str:
-        base_url = current_app.config["PUBLIC_BASE_URL"].rstrip("/")
-        return f"{base_url}/api/documentos/verificar/{qr_hash}"
+        return public_api_url(f"/api/documentos/verificar/{qr_hash}")
 
     @staticmethod
     def build_download_url(solicitud_id: int) -> str:
-        return f"/api/documentos/solicitudes/{solicitud_id}/archivo"
+        return public_api_url(f"/api/documentos/solicitudes/{solicitud_id}/archivo")
 
     @staticmethod
     def generate_qr_hash() -> str:

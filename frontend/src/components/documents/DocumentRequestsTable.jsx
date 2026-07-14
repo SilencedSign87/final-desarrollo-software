@@ -1,4 +1,5 @@
 import DocumentStatusBadge from './DocumentStatusBadge'
+import { resolveApiUrl } from '../../services/api'
 import { getDocumentComprobanteUrl, getDocumentDownloadUrl } from '../../services/documentsService'
 
 export default function DocumentRequestsTable({
@@ -71,9 +72,9 @@ export default function DocumentRequestsTable({
                                 <td className="px-4 py-3">
                                     {request.comprobante_url ? (
                                         <a
-                                            href={request.comprobante_url.startsWith('/api/')
-                                                ? request.comprobante_url
-                                                : getDocumentComprobanteUrl(request.id)}
+                                            href={resolveApiUrl(
+                                                request.comprobante_url || getDocumentComprobanteUrl(request.id)
+                                            )}
                                             className="text-blue-700 hover:underline"
                                             target="_blank"
                                             rel="noreferrer"

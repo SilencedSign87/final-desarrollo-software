@@ -1,5 +1,6 @@
 import MatriculaStatusBadge from './MatriculaStatusBadge'
-import { getComprobanteDownloadUrl, getFichaDownloadUrl } from '../../services/matriculaService'
+import { resolveApiUrl } from '../../services/api'
+import { getFichaDownloadUrl } from '../../services/matriculaService'
 
 export default function MatriculasTable({ matriculas, emptyMessage, actions, showFicha = false }) {
     if (!matriculas?.length) {
@@ -31,13 +32,9 @@ export default function MatriculasTable({ matriculas, emptyMessage, actions, sho
                 </thead>
                 <tbody className="divide-y divide-neutral-200 bg-white">
                     {matriculas.map((matricula) => {
-                        const comprobanteHref = matricula.comprobante_url?.startsWith('/api/')
-                            ? matricula.comprobante_url
-                            : matricula.comprobante_url?.startsWith('http')
-                                ? matricula.comprobante_url
-                                : matricula.comprobante_url
-                                    ? getComprobanteDownloadUrl(matricula.id)
-                                    : null
+                        const comprobanteHref = matricula.comprobante_url
+                            ? resolveApiUrl(matricula.comprobante_url)
+                            : null
 
                         return (
                             <tr key={matricula.id}>
