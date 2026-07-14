@@ -10,7 +10,8 @@ class Config:
     SESSION_PERMANENT = True
     PERMANENT_SESSION_LIFETIME = 3600  # 1 hora
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = 'None'
+    SESSION_COOKIE_SECURE = True
     DOCUMENTS_FOLDER = os.getenv('DOCUMENTS_FOLDER', 'instance/documentos')
     COMPROBANTES_FOLDER = os.getenv('COMPROBANTES_FOLDER', 'instance/comprobantes')
     SILABOS_FOLDER = os.getenv('SILABOS_FOLDER', 'instance/silabos')
